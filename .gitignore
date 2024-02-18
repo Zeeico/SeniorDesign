@@ -33,3 +33,5 @@
 
 # Our stuff
 build/
+__pycache__/
+
