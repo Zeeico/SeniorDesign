@@ -57,6 +57,14 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define thermistorIn0_Pin GPIO_PIN_0
+#define thermistorIn0_GPIO_Port GPIOA
+#define thermistorIn1_Pin GPIO_PIN_3
+#define thermistorIn1_GPIO_Port GPIOA
+#define thermistorIn2_Pin GPIO_PIN_6
+#define thermistorIn2_GPIO_Port GPIOA
+#define thermistorIn3_Pin GPIO_PIN_1
+#define thermistorIn3_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
