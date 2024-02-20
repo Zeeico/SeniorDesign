@@ -8,7 +8,7 @@
 # The project name
 target: mainboard_code
 # Can be C or C++
-language: C
+language: C++
 
 optimization: Og
 
@@ -46,6 +46,7 @@ assemblyFlags:
 
 linkerFlags: 
   - -Wl,--print-memory-usage
+  - -specs=nosys.specs
 
 
 # libraries to be included. The -l prefix to the library will be automatically added.
