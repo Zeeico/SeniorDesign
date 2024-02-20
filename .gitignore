@@ -34,4 +34,4 @@
 # Our stuff
 build/
 __pycache__/
-
+STM32Make.make
