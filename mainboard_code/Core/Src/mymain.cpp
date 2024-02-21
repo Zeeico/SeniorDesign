@@ -1,25 +1,17 @@
 #include "mymain.h"
 
+#include "emeter.hpp"
 #include "mymain_cpp.h"
 
 int mymain() {
 	//! Final setup not handled by cubemx generated code
 	HAL_ADC_Start_DMA(&hadc1, reinterpret_cast<uint32_t*>(thermistorValues.data()), thermistorValues.size());
 
-	for (uint32_t& val : thermistorValues) {
-		val++;
-	}
+	tEmeter emeter0(&hi2c1, tEmeterAddrPins::GND, tEmeterAddrPins::GND);
+	tEmeter emeter1(&hi2c1, tEmeterAddrPins::GND, tEmeterAddrPins::VS);
 
-	int k = 0;
-	for (int i = 0; i < 4; i++) {
-		k += *(thermistorValues.data() + i);
-	}
-
-	if (k == 0) {
-		k = -1;
-	} else {
-		k = 2;
-	}
+	tEmeter emeter2(&hi2c2, tEmeterAddrPins::GND, tEmeterAddrPins::GND);
+	tEmeter emeter3(&hi2c2, tEmeterAddrPins::GND, tEmeterAddrPins::VS);
 
 	while (1) {
 	}
