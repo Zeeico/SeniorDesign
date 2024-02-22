@@ -367,18 +367,6 @@ static void MX_GPIO_Init(void) {
 }
 
 /* USER CODE BEGIN 4 */
-// CAN Rx interrupt handler
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *p_hcan) {
-	CAN_RxHeaderTypeDef rxHeader;
-	uint8_t rxData[8];
-	HAL_CAN_GetRxMessage(p_hcan, CAN_RX_FIFO0, &rxHeader, rxData);
-
-	switch (rxHeader.StdId) {
-		// Handle messages here
-		default:
-			break;
-	}
-}
 
 /* USER CODE END 4 */
 
