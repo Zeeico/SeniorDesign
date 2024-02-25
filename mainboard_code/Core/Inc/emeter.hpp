@@ -5,7 +5,7 @@
 
 class tEmeter {
    public:
-	tEmeter(I2C_HandleTypeDef* phi2c, tEmeterAddrPins pinA0, tEmeterAddrPins pinA1);
+	tEmeter(I2C_HandleTypeDef* phi2c, eEmeterAddrPins pinA0, eEmeterAddrPins pinA1);
 
 	void WriteConfig(emeterConfigReg* reg);
 	void ReadBusVoltage(emeterBusVoltageReg* reg);

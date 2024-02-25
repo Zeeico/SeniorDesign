@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-enum tEmeterAddrPins {
+enum eEmeterAddrPins {
 	GND,
 	VS,
 	SDA,

@@ -348,7 +348,6 @@ static void MX_GPIO_Init(void) {
 
 	/* GPIO Ports Clock Enable */
 	__HAL_RCC_GPIOC_CLK_ENABLE();
-	__HAL_RCC_GPIOD_CLK_ENABLE();
 	__HAL_RCC_GPIOA_CLK_ENABLE();
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 
@@ -365,27 +364,12 @@ static void MX_GPIO_Init(void) {
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(ALARM_Output_GPIO_Port, &GPIO_InitStruct);
 
-	/*Configure GPIO pins : boardDetect0_Pin boardDetect1_Pin */
-	GPIO_InitStruct.Pin = boardDetect0_Pin | boardDetect1_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	GPIO_InitStruct.Pull = GPIO_PULLUP;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-	/*Configure GPIO pins : boardDetect2_Pin boardDetect3_Pin */
-	GPIO_InitStruct.Pin = boardDetect2_Pin | boardDetect3_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	GPIO_InitStruct.Pull = GPIO_PULLUP;
-	HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-
 	/*Configure GPIO pins : relay3cmd_Pin relay2cmd_Pin relay1cmd_Pin relay0cmd_Pin */
 	GPIO_InitStruct.Pin = relay3cmd_Pin | relay2cmd_Pin | relay1cmd_Pin | relay0cmd_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-	/*Configure peripheral I/O remapping */
-	__HAL_AFIO_REMAP_PD01_ENABLE();
 
 	/* USER CODE BEGIN MX_GPIO_Init_2 */
 	/* USER CODE END MX_GPIO_Init_2 */

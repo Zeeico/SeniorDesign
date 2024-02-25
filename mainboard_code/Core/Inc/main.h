@@ -66,14 +66,6 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define ALARM_Output_Pin GPIO_PIN_13
 #define ALARM_Output_GPIO_Port GPIOC
-#define boardDetect0_Pin GPIO_PIN_14
-#define boardDetect0_GPIO_Port GPIOC
-#define boardDetect1_Pin GPIO_PIN_15
-#define boardDetect1_GPIO_Port GPIOC
-#define boardDetect2_Pin GPIO_PIN_0
-#define boardDetect2_GPIO_Port GPIOD
-#define boardDetect3_Pin GPIO_PIN_1
-#define boardDetect3_GPIO_Port GPIOD
 #define thermistorIn0_Pin GPIO_PIN_0
 #define thermistorIn0_GPIO_Port GPIOA
 #define thermistorIn1_Pin GPIO_PIN_3
