@@ -1,0 +1,5 @@
+LTspice 24.0.9 for Windows
+Circuit: * C:\Users\temp\Desktop\git\SeniorDesign\HardwareScripts\TempAndRCFilters\LTSpiceModel\RCFilter.asc
+Start Time: Sat Feb 24 21:43:40 2024
+Fatal Error: Unknown subcircuit called in:
+   xu1 n005 n001 5v 0 n001 lt1028
