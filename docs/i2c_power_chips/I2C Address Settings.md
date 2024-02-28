@@ -1,28 +1,21 @@
 ## I^2^C Address Settings
 
-| MODE Pin | I^2^C Target Address |
-| -------- | -------------------- |
-| Low      | 0x75 = 117           |
-| High     | 0x74 = 116           |
+| Lower Limit (V) | Upper Limit (V) | I^2^C Target Address       | ENPWR Default Value |
+| --------------- | --------------- | -------------------------- | ------------------- |
+| **0.00**        | **0.23**        | **0b110'0000 = 0x60 = 96** | 1                   |
+| **0.27**        | **0.47**        | **0b110'0010 = 0x62 = 98** | 1                   |
+| 0.51            | 0.68            | 0b110'0011 = 0x63 = 99     | 0                   |
+| 0.74            | 6.50            | 0b110'0110 = 0x66 = 102    | 0                   |
 
-**I^2^C address settings for TPS55289 HV converter**
+![image-20240227221034291](C:\Users\temp\AppData\Roaming\Typora\typora-user-images\image-20240227221034291.png)
 
+**I2C address setting for MPQ4214 DC/DC** 
 
-
-| ADD Pin | ADD1 | ADD0 | I^2^C Target Address   |
-| ------- | ---- | ---- | ---------------------- |
-| VAUX    | 0    | 0    | 0b000'1000 = 0x08 = 8  |
-| GND     | 0    | 1    | 0b000'1010 = 0x0A = 10 |
-
-**I^2^C address settings for STPD01 LV converter**
-
-
-
-| A1 Pin | A0 Pin | I^2^C Target Address   |
-| ------ | ------ | ---------------------- |
-| GND    | GND    | 0b100'0000 = 0x40 = 64 |
-| GND    | V~S+~  | 0b100'0001 = 0x41 = 65 |
-| V~S+~  | GND    | 0b100'0100 = 0x44 = 68 |
-| V~S+~  | V~S+~  | 0b100'0101 = 0x45 = 69 |
+| A1 Pin  | A0 Pin    | I^2^C Target Address       |
+| ------- | --------- | -------------------------- |
+| **GND** | **GND**   | **0b100'0000 = 0x40 = 64** |
+| **GND** | **V~S+~** | **0b100'0001 = 0x41 = 65** |
+| V~S+~   | GND       | 0b100'0100 = 0x44 = 68     |
+| V~S+~   | V~S+~     | 0b100'0101 = 0x45 = 69     |
 
 **I2C address setting for INA219 E-Meter** 
