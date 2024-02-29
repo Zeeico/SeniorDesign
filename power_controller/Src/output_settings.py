@@ -14,14 +14,17 @@ class OutputSettings(ft.Column):
 
         self.relay_checkbox = ft.Checkbox(label="Relay status", value=False)
 
-        self.v3_3_btn = ft.FilledButton(text="3.3 V", expand=True, col={"md": 16, "lg": 8})
-        self.v5_btn = ft.FilledButton(text="5 V", expand=True, col={"md": 16, "lg": 8})
-        self.v12_btn = ft.FilledButton(text="12 V", expand=True, col={"md": 16, "lg": 8})
-        self.v22_btn = ft.FilledButton(text="24 V", expand=True, col={"md": 16, "lg": 8})
+        self.v3_3_btn = ft.FilledButton(text="3.3 V", expand=True, col={"md": 16, "lg": 8}, on_click=lambda _: self.vout_set(3.3))
+        self.v5_btn = ft.FilledButton(text="5 V", expand=True, col={"md": 16, "lg": 8}, on_click=lambda _: self.vout_set(5))
+        self.v12_btn = ft.FilledButton(text="12 V", expand=True, col={"md": 16, "lg": 8}, on_click=lambda _: self.vout_set(12))
+        self.v22_btn = ft.FilledButton(text="24 V", expand=True, col={"md": 16, "lg": 8}, on_click=lambda _: self.vout_set(24))
 
         self.vout_btn_row = ft.ResponsiveRow([self.v3_3_btn, self.v5_btn, self.v12_btn, self.v22_btn], alignment=ft.MainAxisAlignment.CENTER, columns=16)
 
-        self.vout_slider = ft.Slider(min=0, max=24, divisions=241, label="{value} V", round=1)  # 221 = (22 * 10) + 1, for a tick every 0.1 V
+        # 221 = (22 * 10) + 1, for a tick every 0.1 V
+        self.vout_slider = ft.Slider(min=0, max=24, divisions=241, label="{value} V", round=1, on_change_end=lambda e: self.vout_set(round(e.control.value, 1)))
+
+        self.vout_text = ft.Text("No output", size=15, text_align=ft.TextAlign.LEFT)
 
         self.all_controls = [
             ft.Container(height=4),
@@ -30,6 +33,15 @@ class OutputSettings(ft.Column):
             self.vout_btn_row,
             ft.Container(height=7),
             self.vout_slider,
+            ft.Row([self.vout_text, ft.Container(expand=True)]),
         ]
 
         self.controls.extend(self.all_controls)
+
+    def vout_set(self, voltage):
+        self.vout_slider.value = voltage
+        self.vout_text.value = f"Output: {voltage} V"
+
+        # Send can message to set voltage value
+
+        self.update()
