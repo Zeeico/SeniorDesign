@@ -73,9 +73,9 @@ void HAL_MspInit(void)
 
   /* System interrupt init*/
 
-  /** DISABLE: JTAG-DP Disabled and SW-DP Disabled
+  /** ENABLE: Full SWJ (JTAG-DP + SW-DP): Reset State
   */
-  __HAL_AFIO_REMAP_SWJ_DISABLE();
+  __HAL_AFIO_REMAP_SWJ_ENABLE();
 
   /* USER CODE BEGIN MspInit 1 */
 
