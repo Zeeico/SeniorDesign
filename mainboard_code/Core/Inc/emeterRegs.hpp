@@ -6,7 +6,7 @@ enum eEmeterAddrPins {
 	VS,
 	SDA,
 	SCL,
-	NUM_ADDR_PINS,
+	NUM_EMETER_ADDR_PINS,
 };
 
 enum eEmeterRegisters {
