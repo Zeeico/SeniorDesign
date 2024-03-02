@@ -7,7 +7,7 @@ enum eMPQ4214AddrPins {
 	VLvl2,
 	VLvl3,
 	VLvl4,
-	NUM_ADDR_PINS,
+	NUM_MPQ4214_ADDR_PINS,
 };
 
 enum eMPQ4214Registers {
@@ -20,19 +20,19 @@ enum eMPQ4214Registers {
 	InterruptMask,	  // R/W
 };
 
-struct __attribute__((packed, aligned(sizeof(uint8_t)))) MPQ4214RefLsbReg {
+struct __attribute__((packed, aligned(sizeof(uint8_t)))) MPQ4214VRefLsbReg {
 	uint8_t VREF_L : 3;
 	uint8_t unused : 5;
 };
 
-struct __attribute__((packed, aligned(sizeof(uint8_t)))) MPQ4214RefMsbReg {
+struct __attribute__((packed, aligned(sizeof(uint8_t)))) MPQ4214VRefMsbReg {
 	uint8_t VREF_H;
 };
 
 struct __attribute__((packed, aligned(sizeof(uint8_t)))) MPQ4214Control1Reg {
 	uint8_t ENPWR : 1;
 	uint8_t GO_BIT : 1;
-	uint8_t Reserve : 1;
+	uint8_t Reserved : 1;
 	uint8_t PNG_Latch : 1;
 	uint8_t Dither : 1;
 	uint8_t DISCHG : 1;
@@ -40,6 +40,14 @@ struct __attribute__((packed, aligned(sizeof(uint8_t)))) MPQ4214Control1Reg {
 };
 
 struct __attribute__((packed, aligned(sizeof(uint8_t)))) MPQ4214Control2Reg {
+	uint8_t OVP_MODE : 2;
+	uint8_t OCP_MODE : 2;
+	uint8_t BB_FSW : 1;
+	uint8_t unused : 1;
+	uint8_t FSW : 2;
+};
+
+struct __attribute__((packed, aligned(sizeof(uint8_t)))) MPQ4214ILIMReg {
 	uint8_t ILIM : 3;
 	uint8_t unused : 5;
 };
