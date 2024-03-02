@@ -1,8 +1,16 @@
 #include "mymain.h"
 
-#include "emeter.hpp"
-#include "mpq4214.hpp"
-#include "mymain_cpp.h"
+#include "mymain.hpp"
+
+tEmeter emeter0(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::GND);
+tEmeter emeter1(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::VS);
+tEmeter emeter2(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::GND);
+tEmeter emeter3(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::VS);
+
+tMPQ4214 bbController0(&hi2c1, eMPQ4214AddrPins::VLvl1);
+tMPQ4214 bbController1(&hi2c1, eMPQ4214AddrPins::VLvl4);
+tMPQ4214 bbController2(&hi2c2, eMPQ4214AddrPins::VLvl1);
+tMPQ4214 bbController3(&hi2c2, eMPQ4214AddrPins::VLvl4);
 
 void InitEmeter(tEmeter &emeter);
 void InitBBController(tMPQ4214 &controller);
@@ -11,20 +19,10 @@ int mymain() {
 	//! Final setup not handled by cubemx generated code
 	HAL_ADC_Start_DMA(&hadc1, reinterpret_cast<uint32_t *>(thermistorValues.data()), thermistorValues.size());
 
-	tEmeter emeter0(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::GND);
-	tEmeter emeter1(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::VS);
-	tEmeter emeter2(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::GND);
-	tEmeter emeter3(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::VS);
-
 	InitEmeter(emeter0);
 	InitEmeter(emeter1);
 	InitEmeter(emeter2);
 	InitEmeter(emeter3);
-
-	tMPQ4214 bbController0(&hi2c1, eMPQ4214AddrPins::VLvl1);
-	tMPQ4214 bbController1(&hi2c1, eMPQ4214AddrPins::VLvl4);
-	tMPQ4214 bbController2(&hi2c2, eMPQ4214AddrPins::VLvl1);
-	tMPQ4214 bbController3(&hi2c2, eMPQ4214AddrPins::VLvl4);
 
 	InitBBController(bbController0);
 	InitBBController(bbController1);
@@ -97,4 +95,51 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *p_hcan) {
 		default:
 			break;
 	}
+}
+
+// Power Controller external interrupt handler
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+	tMPQ4214 *p_controller;
+	switch (GPIO_Pin) {
+		case controller0exti_Pin:
+			// Controller 0 interrupt triggered
+			p_controller = &bbController0;
+			break;
+
+		case controller1exti_Pin:
+			// Controller 1 interrupt triggered
+			p_controller = &bbController1;
+			break;
+
+		case controller2exti_Pin:
+			// Controller 2 interrupt triggered
+			p_controller = &bbController2;
+			break;
+
+		case controller3exti_Pin:
+			// Controller 3 interrupt triggered
+			p_controller = &bbController3;
+			break;
+
+		default:
+			return;
+	}
+
+	MPQ4214InterruptStatus reg;
+	p_controller->ReadInterruptStatus(&reg);
+
+	if (reg.OTP) {
+	}
+	if (reg.CC) {
+	}
+	if (reg.OVP) {
+	}
+	if (reg.OCP) {
+	}
+	if (reg.PNG) {
+	}
+
+	// Clear the interrupts
+	uint8_t statusReset = 0xFF;
+	p_controller->SetInterruptStatus((MPQ4214InterruptStatus *)(&statusReset));
 }
