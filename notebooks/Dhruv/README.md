@@ -10,9 +10,16 @@ Importing components into Altium to begin layout:
 
 Redoing heatsink requirements for the Powerstage board, based on a new chip selected. The aim is to ensure the steady-state temperature of the switches in the DC/DC stay below the 60C threshold, for easy compliance with the FSAE rules. The theory behind the calculation is that a temperature delta can only exist across a thermal resistance. This is analogous to voltage and electrical resistance. We know the ambient temperature, required heat rejection, and the maximum operating temperature of our hardware. Using this, we can calculate the maximum allowable thermal resistance between the electronics and the air, and pick a heatsink that fulfills this requirement.
 
-This is a conservative way of doing this math, but it offers simplicity and robustness in a subsystem that does not require hyper-optimization. Form factor is not a high level requirement of our project.
+This is a conservative way of doing this math, but it offers simplicity and robustness in a subsystem that does not require hyper-optimisation. Form factor is not a high level requirement of our project.
 
 ### 2/24/24 ###
 
-Redid RC filter and ADC op-amp math with Akash, with the aim of maximising voltage range and resolution.
+Re-did RC filter and ADC op-amp math with Akash, with the aim of maximising voltage range and resolution.
+
+### 3/2/24 ###
+
+- Creating schematics for the MCU subsystem PCB. Using a high accuracy voltage supply for the VDDA pin on the STM with decoupling capacitors.
+- Implemented imported 5V LDO with debug LEDs.
+- Fixing capacitor library details in Altium.
+- Implemented relay control and logic level shifter to command the enable pin for our DC/DC control chip.
 
