@@ -22,4 +22,9 @@
 
   <img src="./assets/image-20240229100129152.png" alt="image-20240229100129152" style="zoom:67%;" />
   
-* 
+
+## 29/2/2024 - 6/3/2024
+
+* Added external interrupt pins to microcontroller setup
+* Reorganized some code
+* Went through MPQ4214 datasheet to determine default values for registers
