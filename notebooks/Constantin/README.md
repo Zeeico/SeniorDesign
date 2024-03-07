@@ -26,5 +26,7 @@
 ## 29/2/2024 - 6/3/2024
 
 * Added external interrupt pins to microcontroller setup
+* Wrote outline for CAN interrupt handler and EXTI interrupt handler
 * Reorganized some code
 * Went through MPQ4214 datasheet to determine default values for registers
+* Wrote code to set those default values
