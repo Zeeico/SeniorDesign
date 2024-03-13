@@ -26,3 +26,21 @@ We didn't pass the PCBWay audit since the testpoints were broken. I fixed them a
 Finished PCB. 
 
 There are testpoints on almost all important nets, except the temp sense. The BOM didn't export correctly due to mismatched resistors and caps. They will need to be remade.   
+
+### 3/10/2024
+
+BOM for the Powerstage has been properly made. The PCB needed some changes to pass the PCBWay audit.
+![image-20240312231837371](./assets/image-20240312231837371.png)
+
+![image-20240312231856849](./assets/image-20240312231856849.png)
+
+
+
+### 3/12/2024
+
+The controller has been routed and passes the PCBWay audits and DRC checks.
+
+![image-20240312232101863](./assets/image-20240312232101863.png)
+
+![image-20240312232117383](./assets/image-20240312232117383.png)
+
