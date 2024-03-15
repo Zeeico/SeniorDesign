@@ -44,3 +44,6 @@ The controller has been routed and passes the PCBWay audits and DRC checks.
 
 ![image-20240312232117383](./assets/image-20240312232117383.png)
 
+### 3/13/2024
+
+The BOM has been made for both boards and all the 0603 parts have been put together. 
