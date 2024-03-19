@@ -23,3 +23,8 @@ Re-did RC filter and ADC op-amp math with Akash, with the aim of maximising volt
 - Fixing capacitor library details in Altium.
 - Implemented relay control and logic level shifter to command the enable pin for our DC/DC control chip.
 
+### 3/10/24 ###
+
+- Finishing up schematics for controller board. Making engineering decision about MCU debug connection protocol - SWD vs JTAG. Decided to implement both on the board: SWD is better understood, and we have experience with it. However, JTAG has additional debugging features that could be helpful to us during the testing phase. Since implementing one does not impact the other, and we are under no physical constraints, we chose to implement both. In the event that our JTAG implementation fails, we can rest assured that we will not have to go through the tedious process of a board revision and re-manufacturing.
+- Constructing BOMs for the boards, and completing purchasing requests.
+
