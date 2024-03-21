@@ -4,8 +4,9 @@
 /* Public functions */
 /********************/
 
-tEmeter::tEmeter(I2C_HandleTypeDef* phi2c, eEmeterAddrPins pinA0, eEmeterAddrPins pinA1) {
+tEmeter::tEmeter(I2C_HandleTypeDef* phi2c, eEmeterAddrPins pinA0, eEmeterAddrPins pinA1, uint8_t id) {
 	m_phi2c = phi2c;
+	m_ID = id;
 
 	m_deviceAddress = m_baseAddress + (pinA1 << 2) + pinA0;
 	m_writingAddress = m_deviceAddress << 1;  // Shift by 1 since bit 0 is the R/W bit

@@ -4,6 +4,8 @@
     "stm32-for-vscode.armToolchainPath": "c:\\Users\\Constantin\\AppData\\Roaming\\Code\\User\\arm-none-eabi-gcc\\13.2.1-1.1.1\\.content\\bin",
     "files.associations": {
         "array": "cpp",
-        "compare": "cpp"
+        "compare": "cpp",
+        "stm32f1xx_it.h": "c",
+        "main.h": "c"
     },
 }

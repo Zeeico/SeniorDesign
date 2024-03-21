@@ -2,18 +2,35 @@
 
 #include "mymain.hpp"
 
-tEmeter emeter0(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::GND);
-tEmeter emeter1(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::VS);
-tEmeter emeter2(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::GND);
-tEmeter emeter3(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::VS);
+namespace {
+static constexpr uint32_t cVoltageSetId = 0x100;
+static constexpr uint32_t cRelaySetId = 0x200;
+
+static constexpr uint32_t cEmeterFeedbackId = 0x300;
+static constexpr uint32_t cEmeterFeedbackPeriod = 50;  // ms
+
+static constexpr int cInvalidVoltageCmd = 0xFFFF;
+}  // namespace
+
+uint32_t g_CanTxTick = 0;  // Decrements, send message when it is 0
+uint32_t g_CanRxTick = 0;  // Increments, reset to 0 whenever a CAN message is received
+
+tEmeter emeter0(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 0);
+tEmeter emeter1(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::VS, 1);
+tEmeter emeter2(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 2);
+tEmeter emeter3(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::VS, 3);
 
 tMPQ4214 bbController0(&hi2c1, eMPQ4214AddrPins::VLvl1);
 tMPQ4214 bbController1(&hi2c1, eMPQ4214AddrPins::VLvl4);
 tMPQ4214 bbController2(&hi2c2, eMPQ4214AddrPins::VLvl1);
 tMPQ4214 bbController3(&hi2c2, eMPQ4214AddrPins::VLvl4);
 
+CAN_TxHeaderTypeDef emeterCanHeader;
+uint32_t CanTxMailbox;
+
 void InitEmeter(tEmeter &emeter);
 void InitBBController(tMPQ4214 &controller);
+void SendEmeterStatus(tEmeter &emeter);
 
 int mymain() {
 	//! Final setup not handled by cubemx generated code
@@ -29,7 +46,21 @@ int mymain() {
 	InitBBController(bbController2);
 	InitBBController(bbController3);
 
+	emeterCanHeader.StdId = cEmeterFeedbackId;
+	emeterCanHeader.RTR = CAN_RTR_DATA;
+	emeterCanHeader.IDE = CAN_ID_STD;
+	emeterCanHeader.DLC = 8;
+	emeterCanHeader.TransmitGlobalTime = DISABLE;
+
 	while (1) {
+		if (g_CanTxTick == 0) {
+			SendEmeterStatus(emeter0);
+			SendEmeterStatus(emeter1);
+			SendEmeterStatus(emeter2);
+			SendEmeterStatus(emeter3);
+
+			g_CanTxTick = cEmeterFeedbackPeriod;
+		}
 	}
 }
 
@@ -83,14 +114,88 @@ void InitBBController(tMPQ4214 &controller) {
 	controller.SetInterruptMask(&controllerInterruptMask);
 }
 
+void SendEmeterStatus(tEmeter &emeter) {
+	emeterBusVoltageReg voltage;
+	emeterCurrentReg current;
+	emeterPowerReg power;
+
+	emeter.ReadBusVoltage(&voltage);
+	emeter.ReadCurrent(&current);
+	emeter.ReadPower(&power);
+
+	uint8_t txData[8];
+	txData[0] = emeter.GetID();
+
+	txData[2] = voltage.bd & 0xFF;
+	txData[3] = voltage.bd >> 8;
+
+	int16_t signedCurrent = current.csign ? -current.cd : current.cd;  // Do the signed conversion manually
+	txData[4] = signedCurrent & 0xFF;
+	txData[5] = signedCurrent >> 8;
+
+	txData[6] = power.pd & 0xFF;
+	txData[7] = power.pd >> 8;
+
+	HAL_CAN_AddTxMessage(&hcan, &emeterCanHeader, txData, &CanTxMailbox);
+}
+
 // CAN Rx interrupt handler
 // Make sure there are no issues with this not being in main.c
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *p_hcan) {
 	CAN_RxHeaderTypeDef rxHeader;
 	uint8_t rxData[8];
-	HAL_CAN_GetRxMessage(p_hcan, CAN_RX_FIFO0, &rxHeader, rxData);
+	if (HAL_CAN_GetRxMessage(p_hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
+		g_CanRxTick = 0;
 
 	switch (rxHeader.StdId) {
+		// Voltage set
+		case cVoltageSetId: {
+			std::array<uint16_t, 4> voltageSettings;
+
+			int i = 0;
+			for (uint16_t &vset : voltageSettings) {
+				vset = rxData[i++];
+				vset += (rxData[i++]) << 8;
+			}
+
+			MPQ4214VRefLsbReg VRefLsb;
+			MPQ4214VRefMsbReg VRefMsb;
+
+			if (voltageSettings[0] != cInvalidVoltageCmd) {
+				VRefLsb.unused = 0b00000;
+				VRefLsb.VREF_L = voltageSettings[0] & 0b111;
+				VRefMsb.VREF_H = (voltageSettings[0] >> 3) & 0xFF;
+				bbController0.SetVoltage(&VRefLsb, &VRefMsb);
+			}
+
+			if (voltageSettings[1] != cInvalidVoltageCmd) {
+				VRefLsb.unused = 0b00000;
+				VRefLsb.VREF_L = voltageSettings[1] & 0b111;
+				VRefMsb.VREF_H = (voltageSettings[1] >> 3) & 0xFF;
+				bbController1.SetVoltage(&VRefLsb, &VRefMsb);
+			}
+
+			if (voltageSettings[2] != cInvalidVoltageCmd) {
+				VRefLsb.unused = 0b00000;
+				VRefLsb.VREF_L = voltageSettings[2] & 0b111;
+				VRefMsb.VREF_H = (voltageSettings[2] >> 3) & 0xFF;
+				bbController2.SetVoltage(&VRefLsb, &VRefMsb);
+			}
+
+			if (voltageSettings[3] != cInvalidVoltageCmd) {
+				VRefLsb.unused = 0b00000;
+				VRefLsb.VREF_L = voltageSettings[3] & 0b111;
+				VRefMsb.VREF_H = (voltageSettings[3] >> 3) & 0xFF;
+				bbController3.SetVoltage(&VRefLsb, &VRefMsb);
+			}
+			break;
+		}
+
+		// Current set
+		// Relay set
+		case cRelaySetId:
+			break;
+
 		// Handle messages here
 		default:
 			break;
