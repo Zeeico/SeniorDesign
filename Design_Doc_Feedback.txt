@@ -1,0 +1,8 @@
+- CAN requirements simplification
+- Describe input power supply in paragraph in addition to in diagram
+- Power sequencing / shutdown sequencing
+- Accuracy of temp sense in verification, not requirements
+- Include operating states for verification in all cases, what equipment being used
+- Tolerance analysis, include explanation
+- BOM include component values (10uF cap etc)
+- Ethics, include test safety and procedures
