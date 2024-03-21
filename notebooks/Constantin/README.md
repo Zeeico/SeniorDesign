@@ -30,3 +30,13 @@
 * Reorganized some code
 * Went through MPQ4214 datasheet to determine default values for registers
 * Wrote code to set those default values
+
+## 7/3/2024 - 20/3/2024
+
+* Created CAN DBC file to precisely define all the CAN messages used in the project
+
+  ![image-20240321104400544](./assets/image-20240321104400544.png)
+
+  Example of the layout of one of those messages
+
+* Implemented mainboard code to properly handle the sending and receiving of some of those messages
