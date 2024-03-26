@@ -12,7 +12,8 @@ class OutputSettings(ft.Column):
     def did_mount(self):
         self.header_text = ft.Text(f"Output {self.output_num} Settings", size=20)
 
-        self.relay_checkbox = ft.Checkbox(label="Relay status", value=False)
+        self.relay_checkbox = ft.Checkbox(label="Relay command", value=False, on_change=lambda _: self.relay_cmd())
+        self.relay_status = ft.Icon(ft.icons.QUESTION_MARK_ROUNDED, color=ft.colors.GREY)
 
         self.v3_3_btn = ft.FilledButton(text="3.3 V", expand=True, col={"md": 16, "lg": 8}, on_click=lambda _: self.vout_set(3.3))
         self.v5_btn = ft.FilledButton(text="5 V", expand=True, col={"md": 16, "lg": 8}, on_click=lambda _: self.vout_set(5))
@@ -29,7 +30,7 @@ class OutputSettings(ft.Column):
         self.all_controls = [
             ft.Container(height=4),
             self.header_text,
-            self.relay_checkbox,
+            ft.Row([self.relay_checkbox, self.relay_status]),
             self.vout_btn_row,
             ft.Container(height=7),
             self.vout_slider,
@@ -44,4 +45,13 @@ class OutputSettings(ft.Column):
 
         # Send can message to set voltage value
 
+        self.update()
+
+    def relay_cmd(self):
+        if self.relay_checkbox.value:
+            self.relay_status.name = ft.icons.CHECK_ROUNDED
+            self.relay_status.color = ft.colors.GREEN
+        else:
+            self.relay_status.name = ft.icons.CLOSE_ROUNDED
+            self.relay_status.color = ft.colors.RED
         self.update()
