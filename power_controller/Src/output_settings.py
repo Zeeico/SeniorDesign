@@ -54,4 +54,5 @@ class OutputSettings(ft.Column):
         else:
             self.relay_status.name = ft.icons.CLOSE_ROUNDED
             self.relay_status.color = ft.colors.RED
+
         self.update()

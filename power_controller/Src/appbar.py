@@ -117,7 +117,7 @@ class AppBarClass(ft.AppBar):
         curr_theme = self.page.platform_brightness if self.page.theme_mode == ft.ThemeMode.SYSTEM else self.page.theme_mode
 
         # Switch button icon, tooltip, and page theme
-        if curr_theme == ft.ThemeMode.DARK:
+        if curr_theme == ft.ThemeMode.DARK or curr_theme == ft.Brightness.DARK:
             e.control.icon = ft.icons.DARK_MODE_ROUNDED
             e.control.tooltip = "Switch to dark mode"
             self.page.theme_mode = ft.ThemeMode.LIGHT
