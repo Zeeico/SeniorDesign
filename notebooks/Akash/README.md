@@ -47,3 +47,7 @@ The controller has been routed and passes the PCBWay audits and DRC checks.
 ### 3/13/2024
 
 The BOM has been made for both boards and all the 0603 parts have been put together. 
+
+### 3/23/2024
+
+I have gotten the simulation tools from MPS to do the spice simulations. I have imported our design into the tool but are issues in simulating the board.![image-20240328094514845](./assets/image-20240328094514845.png)
