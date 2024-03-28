@@ -12,6 +12,8 @@ Redoing heatsink requirements for the Powerstage board, based on a new chip sele
 
 This is a conservative way of doing this math, but it offers simplicity and robustness in a subsystem that does not require hyper-optimisation. Form factor is not a high level requirement of our project.
 
+![image](https://github.com/Zeeico/SeniorDesign/assets/100447224/63d58334-a66e-4778-bbe9-2ba9d933ff57)
+
 ### 2/24/24 ###
 
 Re-did RC filter and ADC op-amp math with Akash, with the aim of maximising voltage range and resolution.
@@ -26,9 +28,17 @@ Re-did RC filter and ADC op-amp math with Akash, with the aim of maximising volt
 ### 3/10/24 ###
 
 - Finishing up schematics for controller board. Making engineering decision about MCU debug connection protocol - SWD vs JTAG. Decided to implement both on the board: SWD is better understood, and we have experience with it. However, JTAG has additional debugging features that could be helpful to us during the testing phase. Since implementing one does not impact the other, and we are under no physical constraints, we chose to implement both. In the event that our JTAG implementation fails, we can rest assured that we will not have to go through the tedious process of a board revision and re-manufacturing.
+
+![image](https://github.com/Zeeico/SeniorDesign/assets/100447224/55109738-c3fd-4175-9e05-70b942bd3fc4)
+
 - Constructing BOMs for the boards, and completing purchasing requests.
 
 ### 3/21/24 ###
 
 - TODO: Add pictures!
+
+### 3/27/24 ###
+- Added pictures.
+- Completed individual progress report.
+- Creating priority task list to ensure progress.
 
