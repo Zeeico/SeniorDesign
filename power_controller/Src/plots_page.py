@@ -399,7 +399,7 @@ class PlotsPage(ft.Stack):
             unit_str = "\nUnit: " + unit_str
 
         # Add the new series to plotted_data to enable it to be updated by the CAN loop
-        self.plotted_data.append({"data_name": self.data_to_display_dropdown.value, "plot_index": self.num_data_series, "chart_number": plot_idx})
+        self.plotted_data.append({"output_name": self.all_pgns_dropdown.value, "data_name": self.data_to_display_dropdown.value, "plot_index": self.num_data_series, "chart_number": plot_idx})
 
         # Create a legend to view and control the series
         self.legends.controls.append(self.make_legend(name_str, f"{pgn_str}{unit_str}", self.picked_color, int(self.plot_num_select.value)))

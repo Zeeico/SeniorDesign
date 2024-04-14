@@ -26,7 +26,7 @@ def main(page: ft.Page):
             selected_index=0,
             tabs=[
                 ft.Tab(text="Settings", content=page.settings_page, icon=ft.icons.SETTINGS_ROUNDED),
-                ft.Tab("Charts", content=page.plots_page, icon=ft.icons.SSID_CHART_OUTLINED),
+                ft.Tab(text="Charts", content=page.plots_page, icon=ft.icons.SSID_CHART_OUTLINED),
             ],
             scrollable=False,
         ),

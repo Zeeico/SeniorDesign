@@ -10,6 +10,9 @@ class can_ids(IntFlag):
     emeterFeedback = 0x300
 
 
+outputNames = {0: "Output 1", 1: "Output 2", 2: "Output 3", 3: "Output 4"}
+
+
 class SettingsPage(ft.Stack):
     def __init__(self, page, appbar):
         super().__init__()
@@ -73,7 +76,21 @@ class SettingsPage(ft.Stack):
 
                             if frame.id == can_ids.emeterFeedback:
                                 # Add emeter data here
-                                pass
+                                output_name = outputNames[frame.data[0]]
+
+                                for plot_dict in self.page.plots_page.plotted_data:
+                                    if plot_dict["output_name"] == output_name:
+                                        if plot_dict["data_name"] == "Voltage":
+                                            plot_data = (frame.data[2]) + ((frame.data[3]) << 8)
+                                            self.page.plots_page.add_data(plot_data, plot_dict["plot_index"])
+
+                                        elif plot_dict["data_name"] == "Current":
+                                            plot_data = (frame.data[4]) + ((frame.data[5]) << 8)
+                                            self.page.plots_page.add_data(plot_data, plot_dict["plot_index"])
+
+                                        elif plot_dict["data_name"] == "Power":
+                                            plot_data = (frame.data[6]) + ((frame.data[7]) << 8)
+                                            self.page.plots_page.add_data(plot_data, plot_dict["plot_index"])
 
             except KeyboardInterrupt:
                 exit()
