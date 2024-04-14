@@ -76,11 +76,11 @@ void Error_Handler(void);
 #define controller1exti_Pin GPIO_PIN_4
 #define controller1exti_GPIO_Port GPIOA
 #define controller1exti_EXTI_IRQn EXTI4_IRQn
-#define thermistorIn2_Pin GPIO_PIN_6
-#define thermistorIn2_GPIO_Port GPIOA
-#define controller2exti_Pin GPIO_PIN_7
+#define controller2exti_Pin GPIO_PIN_6
 #define controller2exti_GPIO_Port GPIOA
 #define controller2exti_EXTI_IRQn EXTI9_5_IRQn
+#define thermisorIn2_Pin GPIO_PIN_7
+#define thermisorIn2_GPIO_Port GPIOA
 #define thermistorIn3_Pin GPIO_PIN_1
 #define thermistorIn3_GPIO_Port GPIOB
 #define controller3exti_Pin GPIO_PIN_2

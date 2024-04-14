@@ -104,10 +104,10 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     /**ADC1 GPIO Configuration
     PA0-WKUP     ------> ADC1_IN0
     PA3     ------> ADC1_IN3
-    PA6     ------> ADC1_IN6
+    PA7     ------> ADC1_IN7
     PB1     ------> ADC1_IN9
     */
-    GPIO_InitStruct.Pin = thermistorIn0_Pin|thermistorIn1_Pin|thermistorIn2_Pin;
+    GPIO_InitStruct.Pin = thermistorIn0_Pin|thermistorIn1_Pin|thermisorIn2_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -158,10 +158,10 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     /**ADC1 GPIO Configuration
     PA0-WKUP     ------> ADC1_IN0
     PA3     ------> ADC1_IN3
-    PA6     ------> ADC1_IN6
+    PA7     ------> ADC1_IN7
     PB1     ------> ADC1_IN9
     */
-    HAL_GPIO_DeInit(GPIOA, thermistorIn0_Pin|thermistorIn1_Pin|thermistorIn2_Pin);
+    HAL_GPIO_DeInit(GPIOA, thermistorIn0_Pin|thermistorIn1_Pin|thermisorIn2_Pin);
 
     HAL_GPIO_DeInit(thermistorIn3_GPIO_Port, thermistorIn3_Pin);
 

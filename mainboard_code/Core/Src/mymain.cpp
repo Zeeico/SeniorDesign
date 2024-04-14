@@ -37,7 +37,7 @@ int akash_red_bull_counter = 0;
 int mymain() {
 	akash_red_bull_counter++;
 	//! Final setup not handled by cubemx generated code
-	// HAL_ADC_Start_DMA(&hadc1, reinterpret_cast<uint32_t *>(thermistorValues.data()), thermistorValues.size());
+	HAL_ADC_Start_DMA(&hadc1, reinterpret_cast<uint32_t *>(thermistorValues.data()), thermistorValues.size());
 
 	akash_red_bull_counter++;
 	// InitEmeter(emeter0);
