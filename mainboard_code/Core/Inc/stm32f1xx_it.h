@@ -59,7 +59,7 @@ void EXTI1_IRQHandler(void);
 void EXTI2_IRQHandler(void);
 void EXTI4_IRQHandler(void);
 void DMA1_Channel1_IRQHandler(void);
-void CAN1_RX1_IRQHandler(void);
+void USB_LP_CAN1_RX0_IRQHandler(void);
 void EXTI9_5_IRQHandler(void);
 void I2C1_EV_IRQHandler(void);
 /* USER CODE BEGIN EFP */

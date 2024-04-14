@@ -32,20 +32,26 @@ void InitEmeter(tEmeter &emeter);
 void InitBBController(tMPQ4214 &controller);
 void SendEmeterStatus(tEmeter &emeter);
 
+int akash_red_bull_counter = 0;
+
 int mymain() {
+	akash_red_bull_counter++;
 	//! Final setup not handled by cubemx generated code
-	HAL_ADC_Start_DMA(&hadc1, reinterpret_cast<uint32_t *>(thermistorValues.data()), thermistorValues.size());
+	// HAL_ADC_Start_DMA(&hadc1, reinterpret_cast<uint32_t *>(thermistorValues.data()), thermistorValues.size());
 
-	InitEmeter(emeter0);
-	InitEmeter(emeter1);
-	InitEmeter(emeter2);
-	InitEmeter(emeter3);
+	akash_red_bull_counter++;
+	// InitEmeter(emeter0);
+	// InitEmeter(emeter1);
+	// InitEmeter(emeter2);
+	// InitEmeter(emeter3);
 
-	InitBBController(bbController0);
-	InitBBController(bbController1);
-	InitBBController(bbController2);
-	InitBBController(bbController3);
+	akash_red_bull_counter++;
+	// InitBBController(bbController0);
+	// InitBBController(bbController1);
+	// InitBBController(bbController2);
+	// InitBBController(bbController3);
 
+	akash_red_bull_counter++;
 	emeterCanHeader.StdId = cEmeterFeedbackId;
 	emeterCanHeader.RTR = CAN_RTR_DATA;
 	emeterCanHeader.IDE = CAN_ID_STD;
@@ -53,14 +59,27 @@ int mymain() {
 	emeterCanHeader.TransmitGlobalTime = DISABLE;
 
 	while (1) {
+		akash_red_bull_counter++;
 		if (g_CanTxTick == 0) {
-			SendEmeterStatus(emeter0);
-			SendEmeterStatus(emeter1);
-			SendEmeterStatus(emeter2);
-			SendEmeterStatus(emeter3);
+			// SendEmeterStatus(emeter0);
+			// SendEmeterStatus(emeter1);
+			// SendEmeterStatus(emeter2);
+			// SendEmeterStatus(emeter3);
+
+			static int val = 0;
+			uint8_t tx_data[8];
+			tx_data[0] = val++;
+			HAL_CAN_AddTxMessage(&hcan, &emeterCanHeader, tx_data, &CanTxMailbox);
 
 			g_CanTxTick = cEmeterFeedbackPeriod;
 		}
+
+		// CAN_RxHeaderTypeDef rxHeader;
+		// uint8_t rxData[8];
+		// if (HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK) {
+			// static int rx_counter = 0;
+			// rx_counter++;
+		// }
 	}
 }
 
@@ -209,6 +228,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *p_hcan) {
 
 // Power Controller external interrupt handler
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+	return;
 	tMPQ4214 *p_controller;
 	switch (GPIO_Pin) {
 		case controller0exti_Pin:

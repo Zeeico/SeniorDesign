@@ -252,11 +252,27 @@ static void MX_CAN_Init(void) {
 		Error_Handler();
 	}
 	/* USER CODE BEGIN CAN_Init 2 */
-	if (HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK) {
+	CAN_FilterTypeDef canFilterConfig;
+
+	canFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	canFilterConfig.FilterIdLow = 0x0000;
+	canFilterConfig.FilterIdHigh = 0x0000;
+	canFilterConfig.FilterMaskIdLow = 0x0000;
+	canFilterConfig.FilterMaskIdHigh = 0x0000;
+	canFilterConfig.FilterFIFOAssignment = CAN_FilterFIFO0;
+	canFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	canFilterConfig.FilterActivation = CAN_FILTER_ENABLE;
+	canFilterConfig.FilterBank = 0;
+
+	if (HAL_CAN_ConfigFilter(&hcan, &canFilterConfig) != HAL_OK) {
 		Error_Handler();
 	}
 
 	if (HAL_CAN_Start(&hcan) != HAL_OK) {
+		Error_Handler();
+	}
+
+	if (HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK) {
 		Error_Handler();
 	}
 
@@ -401,7 +417,6 @@ static void MX_GPIO_Init(void) {
 }
 
 /* USER CODE BEGIN 4 */
-
 /* USER CODE END 4 */
 
 /**
