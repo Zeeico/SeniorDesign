@@ -15,6 +15,9 @@ class tEmeter {
 
 	uint8_t GetID() { return m_ID; }
 
+	void SetInitialised(bool val) { m_Initialised = val; }
+	bool GetInitialised() { return m_Initialised; }
+
    private:
 	void RegToUint8t(uint16_t* reg, uint8_t* value);
 	void ReadRegister(uint16_t* pData, eEmeterRegisters pReg);
@@ -24,6 +27,9 @@ class tEmeter {
 	uint8_t m_deviceAddress;
 	uint8_t m_writingAddress;
 	uint8_t m_ID;
+
+	bool m_Initialised{false};
+	int m_Status = 0;
 
 	static constexpr uint8_t m_baseAddress = 0b1000000;
 };

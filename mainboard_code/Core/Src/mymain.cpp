@@ -10,20 +10,22 @@ static constexpr uint32_t cEmeterFeedbackId = 0x300;
 static constexpr uint32_t cEmeterFeedbackPeriod = 50;  // ms
 
 static constexpr int cInvalidVoltageCmd = 0xFFFF;
+
+static constexpr int cPowerBoardADCDetectedThreshold = 800;
 }  // namespace
 
 uint32_t g_CanTxTick = 0;  // Decrements, send message when it is 0
 uint32_t g_CanRxTick = 0;  // Increments, reset to 0 whenever a CAN message is received
 
-tEmeter emeter0(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 0);
-tEmeter emeter1(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::VS, 1);
-tEmeter emeter2(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 2);
-tEmeter emeter3(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::VS, 3);
+tEmeter emeter0(&hi2c2, eEmeterAddrPins::VS, eEmeterAddrPins::GND, 0);
+tEmeter emeter1(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 1);
+tEmeter emeter2(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 2);
+tEmeter emeter3(&hi2c1, eEmeterAddrPins::VS, eEmeterAddrPins::GND, 3);
 
-tMPQ4214 bbController0(&hi2c1, eMPQ4214AddrPins::VLvl1);
-tMPQ4214 bbController1(&hi2c1, eMPQ4214AddrPins::VLvl4);
-tMPQ4214 bbController2(&hi2c2, eMPQ4214AddrPins::VLvl1);
-tMPQ4214 bbController3(&hi2c2, eMPQ4214AddrPins::VLvl4);
+tMPQ4214 bbController0(&hi2c2, eMPQ4214AddrPins::VLvl4);
+tMPQ4214 bbController1(&hi2c2, eMPQ4214AddrPins::VLvl1);
+tMPQ4214 bbController2(&hi2c1, eMPQ4214AddrPins::VLvl1);
+tMPQ4214 bbController3(&hi2c1, eMPQ4214AddrPins::VLvl4);
 
 CAN_TxHeaderTypeDef emeterCanHeader;
 uint32_t CanTxMailbox;
@@ -43,13 +45,13 @@ int mymain() {
 	// InitEmeter(emeter0);
 	// InitEmeter(emeter1);
 	// InitEmeter(emeter2);
-	// InitEmeter(emeter3);
+	InitEmeter(emeter3);
 
 	akash_red_bull_counter++;
 	// InitBBController(bbController0);
 	// InitBBController(bbController1);
 	// InitBBController(bbController2);
-	// InitBBController(bbController3);
+	InitBBController(bbController3);
 
 	akash_red_bull_counter++;
 	emeterCanHeader.StdId = cEmeterFeedbackId;
@@ -61,29 +63,22 @@ int mymain() {
 	while (1) {
 		akash_red_bull_counter++;
 		if (g_CanTxTick == 0) {
-			// SendEmeterStatus(emeter0);
-			// SendEmeterStatus(emeter1);
-			// SendEmeterStatus(emeter2);
-			// SendEmeterStatus(emeter3);
-
-			static int val = 0;
-			uint8_t tx_data[8];
-			tx_data[0] = val++;
-			HAL_CAN_AddTxMessage(&hcan, &emeterCanHeader, tx_data, &CanTxMailbox);
+			SendEmeterStatus(emeter0);
+			SendEmeterStatus(emeter1);
+			SendEmeterStatus(emeter2);
+			SendEmeterStatus(emeter3);
 
 			g_CanTxTick = cEmeterFeedbackPeriod;
 		}
-
-		// CAN_RxHeaderTypeDef rxHeader;
-		// uint8_t rxData[8];
-		// if (HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK) {
-			// static int rx_counter = 0;
-			// rx_counter++;
-		// }
 	}
 }
 
 void InitEmeter(tEmeter &emeter) {
+	// This snippet works, just need to hook up the rest of the code properly
+	// if (thermistorValues[emeter.GetID()] < cPowerBoardADCDetectedThreshold) {
+	// return;
+	// }
+
 	emeterConfigReg emeterConfig;
 	emeterConfig.reset = 0b0;	 // Don't reset
 	emeterConfig.brng = 0b1;	 // Bus voltage range 32V
@@ -92,6 +87,7 @@ void InitEmeter(tEmeter &emeter) {
 	emeterConfig.mode = 0b111;	 // Shunt and Bus continuous mode
 
 	emeter.WriteConfig(&emeterConfig);
+	emeter.SetInitialised(true);
 }
 
 void InitBBController(tMPQ4214 &controller) {
@@ -134,6 +130,10 @@ void InitBBController(tMPQ4214 &controller) {
 }
 
 void SendEmeterStatus(tEmeter &emeter) {
+	if (!emeter.GetInitialised()) {
+		return;
+	}
+
 	emeterBusVoltageReg voltage;
 	emeterCurrentReg current;
 	emeterPowerReg power;
