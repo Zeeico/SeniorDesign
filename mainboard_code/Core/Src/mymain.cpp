@@ -46,6 +46,8 @@ void SetVoltage(tMPQ4214 &controller, uint16_t millivolts);
 
 int akash_red_bull_counter = 0;
 
+int command = 0;
+
 int mymain() {
 	akash_red_bull_counter++;
 	//! Final setup not handled by cubemx generated code
@@ -74,6 +76,23 @@ int mymain() {
 				SendEmeterStatus(*emeter);
 
 			g_CanTxTick = cEmeterFeedbackPeriod;
+		}
+
+		if (command == 1) {
+			SetVoltage(bbController3, 1000);
+			EnableOutput(bbController3);
+			command = 0;
+		} else if (command == 2) {
+			SetVoltage(bbController3, 3300);
+			EnableOutput(bbController3);
+			command = 0;
+		} else if (command == 3) {
+			SetVoltage(bbController3, 5000);
+			EnableOutput(bbController3);
+			command = 0;
+		} else if (command == -1) {
+			InitBBController(bbController3);
+			command = 0;
 		}
 	}
 }
@@ -184,7 +203,7 @@ void EnableOutput(tMPQ4214 &controller) {
 	// Call this function after setting VRef
 	MPQ4214Control1Reg controllerControl1;
 	controllerControl1.SR = 0b00;		 // VRef slew rate = 38 mV/ms
-	controllerControl1.DISCHG = 0b0;	 // Disable output discharge resistor
+	controllerControl1.DISCHG = 0b1;	 // Disable output discharge resistor
 	controllerControl1.Dither = 0b0;	 // Disable dither
 	controllerControl1.PNG_Latch = 0b1;	 // Activate Power Not Good latch
 	controllerControl1.Reserved = 0b1;	 // Has to be set to 1
@@ -192,7 +211,7 @@ void EnableOutput(tMPQ4214 &controller) {
 	controllerControl1.ENPWR = 0b0;		 // Disable power switching
 	controller.SetControl1(&controllerControl1);
 
-	HAL_Delay(20);	// Does this need to be over 20 ms?
+	HAL_Delay(5);  // Does this need to be over 20 ms?
 
 	// Setting this to 1 is 3rd step to power on according to page 35 of datasheet
 	controllerControl1.ENPWR = 0b1;
@@ -216,10 +235,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *p_hcan) {
 		g_CanRxTick = 0;
 
 	if (rxData[0] == 1) {
-		SetVoltage(bbController3, 1000);
-		EnableOutput(bbController3);
+		command = 1;
+	} else if (rxData[0] == 2) {
+		command = 2;
+	} else if (rxData[0] == 3) {
+		command = 3;
 	} else {
-		InitBBController(bbController3);
+		command = -1;
 	}
 	return;
 
