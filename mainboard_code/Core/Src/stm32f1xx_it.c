@@ -175,7 +175,12 @@ void SysTick_Handler(void) {
 	/* USER CODE BEGIN SysTick_IRQn 0 */
 	if (g_CanTxTick > 0)
 		g_CanTxTick--;
+
+	if (g_BoardDetectTick > 0)
+		g_BoardDetectTick--;
+
 	g_CanRxTick++;
+
 	/* USER CODE END SysTick_IRQn 0 */
 	HAL_IncTick();
 	/* USER CODE BEGIN SysTick_IRQn 1 */

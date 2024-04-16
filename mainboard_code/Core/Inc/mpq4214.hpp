@@ -5,7 +5,7 @@
 
 class tMPQ4214 {
    public:
-	tMPQ4214(I2C_HandleTypeDef* phi2c, eMPQ4214AddrPins addrPin);
+	tMPQ4214(I2C_HandleTypeDef* phi2c, eMPQ4214AddrPins addrPin, uint8_t id);
 
 	void SetVoltage(MPQ4214VRefLsbReg* lsbReg, MPQ4214VRefMsbReg* msbReg);
 	void ReadVoltage(MPQ4214VRefLsbReg* lsbReg, MPQ4214VRefMsbReg* msbReg);
@@ -20,9 +20,17 @@ class tMPQ4214 {
 
 	void SetInterruptMask(MPQ4214InterruptMask* reg);
 
+	uint8_t GetId() { return m_ID; }
+
+	void SetInitialised(bool val) { m_Initialised = val; }
+	bool GetInitialised() { return m_Initialised; }
+
    private:
 	I2C_HandleTypeDef* m_phi2c;
 
 	uint8_t m_deviceAddress;
 	uint8_t m_writingAddress;
+	uint8_t m_ID;
+
+	bool m_Initialised{false};
 };

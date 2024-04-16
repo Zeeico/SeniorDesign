@@ -8,28 +8,39 @@ static constexpr uint32_t cRelaySetId = 0x200;
 
 static constexpr uint32_t cEmeterFeedbackId = 0x300;
 static constexpr uint32_t cEmeterFeedbackPeriod = 50;  // ms
+static constexpr uint32_t cBoardDetectPeriod = 250;	   // ms
 
 static constexpr int cInvalidVoltageCmd = 0xFFFF;
+
+static constexpr int cNumMaxPowerBoards = 4;
 
 static constexpr int cPowerBoardADCDetectedThreshold = 800;
 }  // namespace
 
-uint32_t g_CanTxTick = 0;  // Decrements, send message when it is 0
-uint32_t g_CanRxTick = 0;  // Increments, reset to 0 whenever a CAN message is received
+uint32_t g_CanTxTick = 0;		 // Decrements, send message when it is 0
+uint32_t g_CanRxTick = 0;		 // Increments, reset to 0 whenever a CAN message is received
+uint32_t g_BoardDetectTick = 0;	 // Used to periodically check for the presence of boards (cBoardDetectPeriod)
 
 tEmeter emeter0(&hi2c2, eEmeterAddrPins::VS, eEmeterAddrPins::GND, 0);
 tEmeter emeter1(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 1);
 tEmeter emeter2(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 2);
 tEmeter emeter3(&hi2c1, eEmeterAddrPins::VS, eEmeterAddrPins::GND, 3);
+std::array<tEmeter *, 4> emeterHandlers = {&emeter0, &emeter1, &emeter2, &emeter3};
 
-tMPQ4214 bbController0(&hi2c2, eMPQ4214AddrPins::VLvl4);
-tMPQ4214 bbController1(&hi2c2, eMPQ4214AddrPins::VLvl1);
-tMPQ4214 bbController2(&hi2c1, eMPQ4214AddrPins::VLvl1);
-tMPQ4214 bbController3(&hi2c1, eMPQ4214AddrPins::VLvl4);
+tMPQ4214 bbController0(&hi2c2, eMPQ4214AddrPins::VLvl4, 0);
+tMPQ4214 bbController1(&hi2c2, eMPQ4214AddrPins::VLvl1, 1);
+tMPQ4214 bbController2(&hi2c1, eMPQ4214AddrPins::VLvl1, 2);
+tMPQ4214 bbController3(&hi2c1, eMPQ4214AddrPins::VLvl4, 3);
+std::array<tMPQ4214 *, 4> bbControllerHandlers = {&bbController0, &bbController1, &bbController2, &bbController3};
 
 CAN_TxHeaderTypeDef emeterCanHeader;
 uint32_t CanTxMailbox;
 
+void CheckBoardConnections();
+// TODO: Switch these back to using pointers if the references stuff doesn't work
+// void InitEmeter(tEmeter *emeter);
+// void InitBBController(tMPQ4214 *controller);
+// void SendEmeterStatus(tEmeter *emeter);
 void InitEmeter(tEmeter &emeter);
 void InitBBController(tMPQ4214 &controller);
 void SendEmeterStatus(tEmeter &emeter);
@@ -41,17 +52,13 @@ int mymain() {
 	//! Final setup not handled by cubemx generated code
 	HAL_ADC_Start_DMA(&hadc1, reinterpret_cast<uint32_t *>(thermistorValues.data()), thermistorValues.size());
 
-	akash_red_bull_counter++;
-	// InitEmeter(emeter0);
-	// InitEmeter(emeter1);
-	// InitEmeter(emeter2);
-	InitEmeter(emeter3);
+	// akash_red_bull_counter++;
+	// for (tEmeter *emeter : emeterHandlers)
+	// 	InitEmeter(*emeter);
 
-	akash_red_bull_counter++;
-	// InitBBController(bbController0);
-	// InitBBController(bbController1);
-	// InitBBController(bbController2);
-	InitBBController(bbController3);
+	// akash_red_bull_counter++;
+	// for (tMPQ4214 *bbController : bbControllerHandlers)
+	// 	InitBBController(*bbController);
 
 	akash_red_bull_counter++;
 	emeterCanHeader.StdId = cEmeterFeedbackId;
@@ -62,23 +69,48 @@ int mymain() {
 
 	while (1) {
 		akash_red_bull_counter++;
+		// First, check if any board have been connected or disconnected
+		if (g_BoardDetectTick == 0) {
+			CheckBoardConnections();
+			g_BoardDetectTick = cBoardDetectPeriod;
+		}
+
 		if (g_CanTxTick == 0) {
-			SendEmeterStatus(emeter0);
-			SendEmeterStatus(emeter1);
-			SendEmeterStatus(emeter2);
-			SendEmeterStatus(emeter3);
+			for (tEmeter *emeter : emeterHandlers)
+				// SendEmeterStatus(emeter);
+				SendEmeterStatus(*emeter);
 
 			g_CanTxTick = cEmeterFeedbackPeriod;
 		}
 	}
 }
 
-void InitEmeter(tEmeter &emeter) {
-	// This snippet works, just need to hook up the rest of the code properly
-	// if (thermistorValues[emeter.GetID()] < cPowerBoardADCDetectedThreshold) {
-	// return;
-	// }
+void CheckBoardConnections() {
+	for (int i = 0; i < cNumMaxPowerBoards; i++) {
+		// If board disconnected
+		if ((thermistorValues[i] < cPowerBoardADCDetectedThreshold)) {
+			if (emeterHandlers[i]->GetInitialised() || bbControllerHandlers[i]->GetInitialised()) {
+				// Board previously connected, so mark the handlers are not initialised
+				emeterHandlers[i]->SetInitialised(false);
+				bbControllerHandlers[i]->SetInitialised(false);
+			}
+		}
+		// If board connected
+		else {
+			// Initialise handlers if they aren't yet
+			if (!emeterHandlers[i]->GetInitialised())
+				// InitEmeter(emeterHandlers[i]);
+				InitEmeter(*(emeterHandlers[i]));
 
+			if (!bbControllerHandlers[i]->GetInitialised())
+				// InitBBController(bbControllerHandlers[i]);
+				InitBBController(*(bbControllerHandlers[i]));
+		}
+	}
+}
+
+// void InitEmeter(tEmeter *emeter) {
+void InitEmeter(tEmeter &emeter) {
 	emeterConfigReg emeterConfig;
 	emeterConfig.reset = 0b0;	 // Don't reset
 	emeterConfig.brng = 0b1;	 // Bus voltage range 32V
@@ -86,16 +118,20 @@ void InitEmeter(tEmeter &emeter) {
 	emeterConfig.badc = 0b0011;	 // 12 bit ADC, 532 μs conversion time
 	emeterConfig.mode = 0b111;	 // Shunt and Bus continuous mode
 
+	// emeter->WriteConfig(&emeterConfig);
+	// emeter->SetInitialised(true);
 	emeter.WriteConfig(&emeterConfig);
 	emeter.SetInitialised(true);
 }
 
+// void InitBBController(tMPQ4214 *controller) {
 void InitBBController(tMPQ4214 &controller) {
 	MPQ4214VRefLsbReg controllerVRefLsb;
 	MPQ4214VRefMsbReg controllerVRefMsb;
 	controllerVRefLsb.unused = 0b00000;
 	controllerVRefLsb.VREF_L = 0b000;		 // Initialise VREF to 0
 	controllerVRefMsb.VREF_H = 0b0000'0000;	 // Initialise VREF to 0
+	// controller->SetVoltage(&controllerVRefLsb, &controllerVRefMsb);
 	controller.SetVoltage(&controllerVRefLsb, &controllerVRefMsb);
 
 	MPQ4214Control1Reg controllerControl1;
@@ -106,6 +142,7 @@ void InitBBController(tMPQ4214 &controller) {
 	controllerControl1.Reserved = 0b1;	 // Has to be set to 1
 	controllerControl1.GO_BIT = 0b0;	 // Disable changing VOut
 	controllerControl1.ENPWR = 0b0;		 // Disable power switching
+	// controller->SetControl1(&controllerControl1);
 	controller.SetControl1(&controllerControl1);
 
 	MPQ4214Control2Reg controllerControl2;
@@ -113,11 +150,13 @@ void InitBBController(tMPQ4214 &controller) {
 	controllerControl2.BB_FSW = 0b0;	 // Higher switching frequency in buck-boost region
 	controllerControl2.OCP_MODE = 0b01;	 // Hiccup protection, no latching
 	controllerControl2.OVP_MODE = 0b10;	 // Latch off protection, no discharge after OVP
+	// controller->SetControl2(&controllerControl2);
 	controller.SetControl2(&controllerControl2);
 
 	MPQ4214ILIMReg controllerCurrentLim;
 	controllerCurrentLim.ILIM = 0b111;	// Highest current limit, actual limiting done in emeter
 	controllerCurrentLim.unused = 0b00000;
+	// controller->SetILIMReg(&controllerCurrentLim);
 	controller.SetILIMReg(&controllerCurrentLim);
 
 	MPQ4214InterruptMask controllerInterruptMask;
@@ -126,23 +165,31 @@ void InitBBController(tMPQ4214 &controller) {
 	controllerInterruptMask.M_OVP = 0b0;  // Don't mask interrupt
 	controllerInterruptMask.M_OCP = 0b0;  // Don't mask interrupt
 	controllerInterruptMask.M_PNG = 0b0;  // Don't mask interrupt
+	// controller->SetInterruptMask(&controllerInterruptMask);
+	// controller->SetInitialised(true);
 	controller.SetInterruptMask(&controllerInterruptMask);
+	controller.SetInitialised(true);
 }
 
+// void SendEmeterStatus(tEmeter *emeter) {
 void SendEmeterStatus(tEmeter &emeter) {
-	if (!emeter.GetInitialised()) {
+	// if (!emeter->GetInitialised())
+	if (!emeter.GetInitialised())
 		return;
-	}
 
 	emeterBusVoltageReg voltage;
 	emeterCurrentReg current;
 	emeterPowerReg power;
 
+	// emeter->ReadBusVoltage(&voltage);
+	// emeter->ReadCurrent(&current);
+	// emeter->ReadPower(&power);
 	emeter.ReadBusVoltage(&voltage);
 	emeter.ReadCurrent(&current);
 	emeter.ReadPower(&power);
 
 	uint8_t txData[8];
+	// txData[0] = emeter->GetID();
 	txData[0] = emeter.GetID();
 
 	txData[2] = voltage.bd & 0xFF;
@@ -159,7 +206,6 @@ void SendEmeterStatus(tEmeter &emeter) {
 }
 
 // CAN Rx interrupt handler
-// Make sure there are no issues with this not being in main.c
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *p_hcan) {
 	CAN_RxHeaderTypeDef rxHeader;
 	uint8_t rxData[8];
@@ -228,7 +274,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *p_hcan) {
 
 // Power Controller external interrupt handler
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	return;
+	return;	 // Return early because EXTI pins aren't hooked up
 	tMPQ4214 *p_controller;
 	switch (GPIO_Pin) {
 		case controller0exti_Pin:

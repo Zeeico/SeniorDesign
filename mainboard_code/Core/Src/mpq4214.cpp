@@ -4,8 +4,9 @@
 /* Public functions */
 /********************/
 
-tMPQ4214::tMPQ4214(I2C_HandleTypeDef* phi2c, eMPQ4214AddrPins addrPin) {
+tMPQ4214::tMPQ4214(I2C_HandleTypeDef* phi2c, eMPQ4214AddrPins addrPin, uint8_t id) {
 	m_phi2c = phi2c;
+	m_ID = id;
 
 	switch (addrPin) {
 		case eMPQ4214AddrPins::VLvl1:

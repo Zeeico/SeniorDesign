@@ -15,6 +15,8 @@ int mymain();
 //! Extern variables
 extern uint32_t g_CanTxTick;
 extern uint32_t g_CanRxTick;
+extern uint32_t g_BoardDetectTick;
+
 extern CAN_HandleTypeDef hcan;
 
 #ifdef __cplusplus
