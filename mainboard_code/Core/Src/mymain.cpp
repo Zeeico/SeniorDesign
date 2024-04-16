@@ -37,13 +37,12 @@ CAN_TxHeaderTypeDef emeterCanHeader;
 uint32_t CanTxMailbox;
 
 void CheckBoardConnections();
-// TODO: Switch these back to using pointers if the references stuff doesn't work
-// void InitEmeter(tEmeter *emeter);
-// void InitBBController(tMPQ4214 *controller);
-// void SendEmeterStatus(tEmeter *emeter);
 void InitEmeter(tEmeter &emeter);
 void InitBBController(tMPQ4214 &controller);
 void SendEmeterStatus(tEmeter &emeter);
+
+void EnableOutput(tMPQ4214 &controller);
+void SetVoltage(tMPQ4214 &controller, uint16_t millivolts);
 
 int akash_red_bull_counter = 0;
 
@@ -52,20 +51,15 @@ int mymain() {
 	//! Final setup not handled by cubemx generated code
 	HAL_ADC_Start_DMA(&hadc1, reinterpret_cast<uint32_t *>(thermistorValues.data()), thermistorValues.size());
 
-	// akash_red_bull_counter++;
-	// for (tEmeter *emeter : emeterHandlers)
-	// 	InitEmeter(*emeter);
-
-	// akash_red_bull_counter++;
-	// for (tMPQ4214 *bbController : bbControllerHandlers)
-	// 	InitBBController(*bbController);
-
 	akash_red_bull_counter++;
 	emeterCanHeader.StdId = cEmeterFeedbackId;
 	emeterCanHeader.RTR = CAN_RTR_DATA;
 	emeterCanHeader.IDE = CAN_ID_STD;
 	emeterCanHeader.DLC = 8;
 	emeterCanHeader.TransmitGlobalTime = DISABLE;
+
+	// Need to set these high before talking to each BB Controller
+	HAL_GPIO_WritePin(relay3cmd_GPIO_Port, relay3cmd_Pin, GPIO_PinState::GPIO_PIN_SET);
 
 	while (1) {
 		akash_red_bull_counter++;
@@ -77,7 +71,6 @@ int mymain() {
 
 		if (g_CanTxTick == 0) {
 			for (tEmeter *emeter : emeterHandlers)
-				// SendEmeterStatus(emeter);
 				SendEmeterStatus(*emeter);
 
 			g_CanTxTick = cEmeterFeedbackPeriod;
@@ -99,17 +92,14 @@ void CheckBoardConnections() {
 		else {
 			// Initialise handlers if they aren't yet
 			if (!emeterHandlers[i]->GetInitialised())
-				// InitEmeter(emeterHandlers[i]);
 				InitEmeter(*(emeterHandlers[i]));
 
 			if (!bbControllerHandlers[i]->GetInitialised())
-				// InitBBController(bbControllerHandlers[i]);
 				InitBBController(*(bbControllerHandlers[i]));
 		}
 	}
 }
 
-// void InitEmeter(tEmeter *emeter) {
 void InitEmeter(tEmeter &emeter) {
 	emeterConfigReg emeterConfig;
 	emeterConfig.reset = 0b0;	 // Don't reset
@@ -118,20 +108,16 @@ void InitEmeter(tEmeter &emeter) {
 	emeterConfig.badc = 0b0011;	 // 12 bit ADC, 532 μs conversion time
 	emeterConfig.mode = 0b111;	 // Shunt and Bus continuous mode
 
-	// emeter->WriteConfig(&emeterConfig);
-	// emeter->SetInitialised(true);
 	emeter.WriteConfig(&emeterConfig);
 	emeter.SetInitialised(true);
 }
 
-// void InitBBController(tMPQ4214 *controller) {
 void InitBBController(tMPQ4214 &controller) {
 	MPQ4214VRefLsbReg controllerVRefLsb;
 	MPQ4214VRefMsbReg controllerVRefMsb;
 	controllerVRefLsb.unused = 0b00000;
 	controllerVRefLsb.VREF_L = 0b000;		 // Initialise VREF to 0
 	controllerVRefMsb.VREF_H = 0b0000'0000;	 // Initialise VREF to 0
-	// controller->SetVoltage(&controllerVRefLsb, &controllerVRefMsb);
 	controller.SetVoltage(&controllerVRefLsb, &controllerVRefMsb);
 
 	MPQ4214Control1Reg controllerControl1;
@@ -142,7 +128,6 @@ void InitBBController(tMPQ4214 &controller) {
 	controllerControl1.Reserved = 0b1;	 // Has to be set to 1
 	controllerControl1.GO_BIT = 0b0;	 // Disable changing VOut
 	controllerControl1.ENPWR = 0b0;		 // Disable power switching
-	// controller->SetControl1(&controllerControl1);
 	controller.SetControl1(&controllerControl1);
 
 	MPQ4214Control2Reg controllerControl2;
@@ -150,13 +135,11 @@ void InitBBController(tMPQ4214 &controller) {
 	controllerControl2.BB_FSW = 0b0;	 // Higher switching frequency in buck-boost region
 	controllerControl2.OCP_MODE = 0b01;	 // Hiccup protection, no latching
 	controllerControl2.OVP_MODE = 0b10;	 // Latch off protection, no discharge after OVP
-	// controller->SetControl2(&controllerControl2);
 	controller.SetControl2(&controllerControl2);
 
 	MPQ4214ILIMReg controllerCurrentLim;
 	controllerCurrentLim.ILIM = 0b111;	// Highest current limit, actual limiting done in emeter
 	controllerCurrentLim.unused = 0b00000;
-	// controller->SetILIMReg(&controllerCurrentLim);
 	controller.SetILIMReg(&controllerCurrentLim);
 
 	MPQ4214InterruptMask controllerInterruptMask;
@@ -165,15 +148,11 @@ void InitBBController(tMPQ4214 &controller) {
 	controllerInterruptMask.M_OVP = 0b0;  // Don't mask interrupt
 	controllerInterruptMask.M_OCP = 0b0;  // Don't mask interrupt
 	controllerInterruptMask.M_PNG = 0b0;  // Don't mask interrupt
-	// controller->SetInterruptMask(&controllerInterruptMask);
-	// controller->SetInitialised(true);
 	controller.SetInterruptMask(&controllerInterruptMask);
 	controller.SetInitialised(true);
 }
 
-// void SendEmeterStatus(tEmeter *emeter) {
 void SendEmeterStatus(tEmeter &emeter) {
-	// if (!emeter->GetInitialised())
 	if (!emeter.GetInitialised())
 		return;
 
@@ -181,15 +160,11 @@ void SendEmeterStatus(tEmeter &emeter) {
 	emeterCurrentReg current;
 	emeterPowerReg power;
 
-	// emeter->ReadBusVoltage(&voltage);
-	// emeter->ReadCurrent(&current);
-	// emeter->ReadPower(&power);
 	emeter.ReadBusVoltage(&voltage);
 	emeter.ReadCurrent(&current);
 	emeter.ReadPower(&power);
 
 	uint8_t txData[8];
-	// txData[0] = emeter->GetID();
 	txData[0] = emeter.GetID();
 
 	txData[2] = voltage.bd & 0xFF;
@@ -205,12 +180,48 @@ void SendEmeterStatus(tEmeter &emeter) {
 	HAL_CAN_AddTxMessage(&hcan, &emeterCanHeader, txData, &CanTxMailbox);
 }
 
+void EnableOutput(tMPQ4214 &controller) {
+	// Call this function after setting VRef
+	MPQ4214Control1Reg controllerControl1;
+	controllerControl1.SR = 0b00;		 // VRef slew rate = 38 mV/ms
+	controllerControl1.DISCHG = 0b0;	 // Disable output discharge resistor
+	controllerControl1.Dither = 0b0;	 // Disable dither
+	controllerControl1.PNG_Latch = 0b1;	 // Activate Power Not Good latch
+	controllerControl1.Reserved = 0b1;	 // Has to be set to 1
+	controllerControl1.GO_BIT = 0b1;	 // Enable changing VOut
+	controllerControl1.ENPWR = 0b0;		 // Disable power switching
+	controller.SetControl1(&controllerControl1);
+
+	HAL_Delay(20);	// Does this need to be over 20 ms?
+
+	// Setting this to 1 is 3rd step to power on according to page 35 of datasheet
+	controllerControl1.ENPWR = 0b1;
+	controller.SetControl1(&controllerControl1);
+}
+
+void SetVoltage(tMPQ4214 &controller, uint16_t millivolts) {
+	MPQ4214VRefLsbReg controllerVRefLsb;
+	MPQ4214VRefMsbReg controllerVRefMsb;
+	controllerVRefLsb.unused = 0b00000;
+	controllerVRefLsb.VREF_L = millivolts & 0b111;		  // Bits 2-0
+	controllerVRefMsb.VREF_H = (millivolts >> 3) & 0xFF;  // Bits 10-3
+	controller.SetVoltage(&controllerVRefLsb, &controllerVRefMsb);
+}
+
 // CAN Rx interrupt handler
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *p_hcan) {
 	CAN_RxHeaderTypeDef rxHeader;
 	uint8_t rxData[8];
 	if (HAL_CAN_GetRxMessage(p_hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
 		g_CanRxTick = 0;
+
+	if (rxData[0] == 1) {
+		SetVoltage(bbController3, 1000);
+		EnableOutput(bbController3);
+	} else {
+		InitBBController(bbController3);
+	}
+	return;
 
 	switch (rxHeader.StdId) {
 		// Voltage set

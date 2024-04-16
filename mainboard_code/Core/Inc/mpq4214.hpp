@@ -25,6 +25,8 @@ class tMPQ4214 {
 	void SetInitialised(bool val) { m_Initialised = val; }
 	bool GetInitialised() { return m_Initialised; }
 
+	void FindAddress(MPQ4214VRefLsbReg* lsbReg);
+
    private:
 	I2C_HandleTypeDef* m_phi2c;
 
@@ -33,4 +35,5 @@ class tMPQ4214 {
 	uint8_t m_ID;
 
 	bool m_Initialised{false};
+	uint8_t m_Status = 0;
 };

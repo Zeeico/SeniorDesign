@@ -16,7 +16,6 @@ void tEmeter::WriteConfig(emeterConfigReg* reg) {
 	uint8_t regValue[2];
 	RegToUint8t((uint16_t*)reg, regValue);
 
-	// HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(m_phi2c, m_writingAddress, eEmeterRegisters::Configuration, I2C_MEMADD_SIZE_8BIT, regValue, sizeof(regValue), HAL_MAX_DELAY);
 	HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(m_phi2c, m_writingAddress, eEmeterRegisters::Configuration, I2C_MEMADD_SIZE_8BIT, regValue, sizeof(regValue), 1000);
 }
 
@@ -36,7 +35,7 @@ void tEmeter::WriteCalibration(emeterCalibrationReg* reg) {
 	uint8_t regValue[2];
 	RegToUint8t((uint16_t*)reg, regValue);
 
-	HAL_I2C_Mem_Write(m_phi2c, m_writingAddress, eEmeterRegisters::Calibration, I2C_MEMADD_SIZE_8BIT, regValue, sizeof(regValue), HAL_MAX_DELAY);
+	HAL_I2C_Mem_Write(m_phi2c, m_writingAddress, eEmeterRegisters::Calibration, I2C_MEMADD_SIZE_8BIT, regValue, sizeof(regValue), 1000);
 }
 
 /*********************/
@@ -50,7 +49,7 @@ void tEmeter::RegToUint8t(uint16_t* reg, uint8_t* value) {
 
 void tEmeter::ReadRegister(uint16_t* pData, eEmeterRegisters pReg) {
 	uint8_t rxBuf[2];
-	HAL_I2C_Mem_Read(m_phi2c, m_writingAddress, pReg, I2C_MEMADD_SIZE_8BIT, rxBuf, sizeof(rxBuf), HAL_MAX_DELAY);
+	HAL_I2C_Mem_Read(m_phi2c, m_writingAddress, pReg, I2C_MEMADD_SIZE_8BIT, rxBuf, sizeof(rxBuf), 1000);
 
 	*pData = ((rxBuf[0] << 8) | (rxBuf[1]));
 }
