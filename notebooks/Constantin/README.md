@@ -40,3 +40,14 @@
   Example of the layout of one of those messages
 
 * Implemented mainboard code to properly handle the sending and receiving of some of those messages
+
+## 11/4/2024 - 17/4/2024
+
+* Soldered PCBs
+* Tested and fixed small issues in CAN bus code
+* Tested thermistor ADC readings through DMA, and tuned ADC speed too prevent a higher than ideal impact on the rest of the code
+* Verified ability to detect the presence of a secondary board using the thermistors
+* Updated code to reflect addresses of the I2C chips, and tested I2C communication with the emeter
+* Slightly updated the GUI code to enable the reading of the emeterFeedback CAN message, which then allows us to plot the signals in our GUI
+
+![estres](./assets/estres.jpg)
