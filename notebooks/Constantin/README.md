@@ -49,5 +49,6 @@
 * Verified ability to detect the presence of a secondary board using the thermistors
 * Updated code to reflect addresses of the I2C chips, and tested I2C communication with the emeter
 * Slightly updated the GUI code to enable the reading of the emeterFeedback CAN message, which then allows us to plot the signals in our GUI
+* Tested and fixed several issues with the buck boost controller code (mostly small bugs in the I2C code). Wrote simple code to toggle between different voltages. We were able to select different output voltages, but unfortunately, an LDO blew up and we had to stop testing
 
 ![estres](./assets/estres.jpg)
