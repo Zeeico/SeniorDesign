@@ -8,9 +8,10 @@ class can_ids(IntFlag):
     VSet = 0x100
     RelaySet = 0x200
     emeterFeedback = 0x300
+    thermistorFeedback = 0x400  # Send 0xFFFF to indicate invalid temperature
 
 
-outputNames = {0: "Output 1", 1: "Output 2", 2: "Output 3", 3: "Output 4"}
+outputNames = ["Output 1", "Output 2", "Output 3", "Output 4"]
 
 
 class SettingsPage(ft.Stack):
@@ -91,6 +92,17 @@ class SettingsPage(ft.Stack):
                                         elif plot_dict["data_name"] == "Power":
                                             plot_data = (frame.data[6]) + ((frame.data[7]) << 8)
                                             self.page.plots_page.add_data(plot_data, plot_dict["plot_index"])
+
+                            elif frame.id == can_ids.thermistorFeedback:
+                                temperature_values = [0, 0, 0, 0]
+                                for i in range(4):
+                                    temperature_values[i] = frame.data[2 * i] + (frame.data[2 * i + 1] << 8)
+
+                                for plot_dict in self.page.plots_page.plotted_data:
+                                    if plot_dict["data_name"] == "Temperature":
+                                        output_id = outputNames.index(plot_dict["output_name"])
+                                        if temperature_values[output_id] != 0xFFFF:
+                                            self.page.plots_page.add_data(temperature_values[output_id], plot_dict["plot_index"])
 
             except KeyboardInterrupt:
                 exit()

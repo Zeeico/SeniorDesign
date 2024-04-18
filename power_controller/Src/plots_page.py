@@ -5,7 +5,7 @@ import re
 import time
 from math import pi
 
-unit_dict = {"Voltage": "V", "Current": "A", "Power": "W"}
+unit_dict = {"Voltage": "V", "Current": "A", "Power": "W", "Temperature": "C"}
 
 
 # The page housing the chart as well as all the necessary controls
@@ -31,6 +31,7 @@ class PlotsPage(ft.Stack):
             ft.dropdown.Option("Voltage"),
             ft.dropdown.Option("Current"),
             ft.dropdown.Option("Power"),
+            ft.dropdown.Option("Temperature"),
         ]
 
         # Legends and a couple buttons to control each data series
