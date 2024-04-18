@@ -52,3 +52,8 @@
 * Tested and fixed several issues with the buck boost controller code (mostly small bugs in the I2C code). Wrote simple code to toggle between different voltages. We were able to select different output voltages, but unfortunately, an LDO blew up and we had to stop testing
 
 ![estres](./assets/estres.jpg)
+
+## 18/4/2024 - 24/4/2024
+
+* Wrote STM32 code to periodically send the thermistor readings, and indicating the absence of a board through a special value in those thermistor values
+* Wrote code for the GUI to receive and display the received temperatures, except when the value is the invalid flag indicating the absence of a board
