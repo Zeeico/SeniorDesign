@@ -5,8 +5,9 @@
 namespace {
 static constexpr uint32_t cVoltageSetId = 0x100;
 static constexpr uint32_t cRelaySetId = 0x200;
-
 static constexpr uint32_t cEmeterFeedbackId = 0x300;
+static constexpr uint32_t cThermistorFeedbackId = 0x400;
+
 static constexpr uint32_t cEmeterFeedbackPeriod = 50;  // ms
 static constexpr uint32_t cBoardDetectPeriod = 250;	   // ms
 
@@ -34,12 +35,14 @@ tMPQ4214 bbController3(&hi2c1, eMPQ4214AddrPins::VLvl4, 3);
 std::array<tMPQ4214 *, 4> bbControllerHandlers = {&bbController0, &bbController1, &bbController2, &bbController3};
 
 CAN_TxHeaderTypeDef emeterCanHeader;
+CAN_TxHeaderTypeDef thermistorCanHeader;
 uint32_t CanTxMailbox;
 
 void CheckBoardConnections();
 void InitEmeter(tEmeter &emeter);
 void InitBBController(tMPQ4214 &controller);
 void SendEmeterStatus(tEmeter &emeter);
+void SendThermistorData();
 
 void EnableOutput(tMPQ4214 &controller);
 void SetVoltage(tMPQ4214 &controller, uint16_t millivolts);
@@ -60,6 +63,12 @@ int mymain() {
 	emeterCanHeader.DLC = 8;
 	emeterCanHeader.TransmitGlobalTime = DISABLE;
 
+	thermistorCanHeader.StdId = cThermistorFeedbackId;
+	thermistorCanHeader.RTR = CAN_RTR_DATA;
+	thermistorCanHeader.IDE = CAN_ID_STD;
+	thermistorCanHeader.DLC = 8;
+	thermistorCanHeader.TransmitGlobalTime = DISABLE;
+
 	// Need to set these high before talking to each BB Controller
 	HAL_GPIO_WritePin(relay3cmd_GPIO_Port, relay3cmd_Pin, GPIO_PinState::GPIO_PIN_SET);
 
@@ -74,7 +83,7 @@ int mymain() {
 		if (g_CanTxTick == 0) {
 			for (tEmeter *emeter : emeterHandlers)
 				SendEmeterStatus(*emeter);
-
+			SendThermistorData();
 			g_CanTxTick = cEmeterFeedbackPeriod;
 		}
 
@@ -197,6 +206,22 @@ void SendEmeterStatus(tEmeter &emeter) {
 	txData[7] = power.pd >> 8;
 
 	HAL_CAN_AddTxMessage(&hcan, &emeterCanHeader, txData, &CanTxMailbox);
+}
+
+void SendThermistorData() {
+	uint8_t txData[8];
+	for (unsigned int i = 0; i < thermistorValues.size(); i++) {
+		if (thermistorValues[i] < cPowerBoardADCDetectedThreshold) {
+			// 0xFFFF indicates invalid data
+			txData[2 * i] = 0xFF;
+			txData[2 * i + 1] = 0xFF;
+		} else {
+			txData[2 * i] = thermistorValues[i] & 0xFF;
+			txData[2 * i + 1] = (thermistorValues[i] >> 8) & 0x0F;	// Should be 12 bit values, so masking top 4 bits
+		}
+	}
+
+	HAL_CAN_AddTxMessage(&hcan, &thermistorCanHeader, txData, &CanTxMailbox);
 }
 
 void EnableOutput(tMPQ4214 &controller) {

@@ -16,7 +16,7 @@ void tEmeter::WriteConfig(emeterConfigReg* reg) {
 	uint8_t regValue[2];
 	RegToUint8t((uint16_t*)reg, regValue);
 
-	HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(m_phi2c, m_writingAddress, eEmeterRegisters::Configuration, I2C_MEMADD_SIZE_8BIT, regValue, sizeof(regValue), 1000);
+	HAL_I2C_Mem_Write(m_phi2c, m_writingAddress, eEmeterRegisters::Configuration, I2C_MEMADD_SIZE_8BIT, regValue, sizeof(regValue), 1000);
 }
 
 void tEmeter::ReadBusVoltage(emeterBusVoltageReg* reg) {
