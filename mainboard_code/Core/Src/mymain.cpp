@@ -24,14 +24,22 @@ uint32_t g_BoardDetectTick = 0;	 // Used to periodically check for the presence 
 
 tEmeter emeter0(&hi2c2, eEmeterAddrPins::VS, eEmeterAddrPins::GND, 0);
 tEmeter emeter1(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 1);
-tEmeter emeter2(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 2);
-tEmeter emeter3(&hi2c1, eEmeterAddrPins::VS, eEmeterAddrPins::GND, 3);
+// tEmeter emeter2(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 2);
+// tEmeter emeter3(&hi2c1, eEmeterAddrPins::VS, eEmeterAddrPins::GND, 3);
+
+tEmeter emeter3(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 2);
+tEmeter emeter2(&hi2c1, eEmeterAddrPins::VS, eEmeterAddrPins::GND, 3);
+
 std::array<tEmeter *, 4> emeterHandlers = {&emeter0, &emeter1, &emeter2, &emeter3};
 
 tMPQ4214 bbController0(&hi2c2, eMPQ4214AddrPins::VLvl4, 0);
 tMPQ4214 bbController1(&hi2c2, eMPQ4214AddrPins::VLvl1, 1);
-tMPQ4214 bbController2(&hi2c1, eMPQ4214AddrPins::VLvl1, 2);
-tMPQ4214 bbController3(&hi2c1, eMPQ4214AddrPins::VLvl4, 3);
+// tMPQ4214 bbController2(&hi2c1, eMPQ4214AddrPins::VLvl1, 2);
+// tMPQ4214 bbController3(&hi2c1, eMPQ4214AddrPins::VLvl4, 3);
+
+tMPQ4214 bbController3(&hi2c1, eMPQ4214AddrPins::VLvl1, 2);
+tMPQ4214 bbController2(&hi2c1, eMPQ4214AddrPins::VLvl4, 3);
+
 std::array<tMPQ4214 *, 4> bbControllerHandlers = {&bbController0, &bbController1, &bbController2, &bbController3};
 
 CAN_TxHeaderTypeDef emeterCanHeader;
@@ -47,9 +55,12 @@ void SendThermistorData();
 void EnableOutput(tMPQ4214 &controller);
 void SetVoltage(tMPQ4214 &controller, uint16_t millivolts);
 
+void I2CClearBus(I2C_HandleTypeDef *instance);
+
 int akash_red_bull_counter = 0;
 
-int command = 0;
+int command = -1;
+bool controller3en = false;
 
 int mymain() {
 	akash_red_bull_counter++;
@@ -70,7 +81,8 @@ int mymain() {
 	thermistorCanHeader.TransmitGlobalTime = DISABLE;
 
 	// Need to set these high before talking to each BB Controller
-	HAL_GPIO_WritePin(relay3cmd_GPIO_Port, relay3cmd_Pin, GPIO_PinState::GPIO_PIN_SET);
+	// HAL_GPIO_WritePin(relay3cmd_GPIO_Port, relay3cmd_Pin, GPIO_PinState::GPIO_PIN_SET);
+	HAL_GPIO_WritePin(relay2cmd_GPIO_Port, relay2cmd_Pin, GPIO_PinState::GPIO_PIN_RESET);
 
 	while (1) {
 		akash_red_bull_counter++;
@@ -81,29 +93,174 @@ int mymain() {
 		}
 
 		if (g_CanTxTick == 0) {
+			// if (!controller3en)
 			for (tEmeter *emeter : emeterHandlers)
 				SendEmeterStatus(*emeter);
+
 			SendThermistorData();
-			g_CanTxTick = cEmeterFeedbackPeriod;
+			g_CanTxTick = cEmeterFeedbackPeriod - 5;  // Account for the delays in the functions
 		}
 
-		if (command == 1) {
+		if (command == 0) {
+			if (controller3en)
+				InitBBController(bbController3);
+
+			command = -1;
+		}
+
+		else if (command == 1) {
 			SetVoltage(bbController3, 1000);
+			HAL_Delay(3);
 			EnableOutput(bbController3);
-			command = 0;
-		} else if (command == 2) {
+			command = -1;
+		}
+
+		else if (command == 2) {
 			SetVoltage(bbController3, 3300);
+			HAL_Delay(3);
 			EnableOutput(bbController3);
-			command = 0;
-		} else if (command == 3) {
+			command = -1;
+		}
+
+		else if (command == 3) {
 			SetVoltage(bbController3, 5000);
+			HAL_Delay(3);
 			EnableOutput(bbController3);
-			command = 0;
-		} else if (command == -1) {
-			InitBBController(bbController3);
-			command = 0;
+			command = -1;
+		}
+
+		else if (command == 16) {
+			// HAL_GPIO_WritePin(relay3cmd_GPIO_Port, relay3cmd_Pin, GPIO_PinState::GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(relay2cmd_GPIO_Port, relay2cmd_Pin, GPIO_PinState::GPIO_PIN_RESET);
+			controller3en = false;
+			command = -1;
+		}
+
+		else if (command == 17) {
+			HAL_GPIO_WritePin(relay2cmd_GPIO_Port, relay2cmd_Pin, GPIO_PinState::GPIO_PIN_SET);
+			controller3en = true;
+			command = -1;
+		}
+
+		else if (command == 18) {
+			// I2CClearBus(&hi2c1);
+			command = -1;
 		}
 	}
+}
+
+#define I2C1_SCL_PIN GPIO_PIN_6
+#define I2C1_SCL_PORT GPIOB
+#define I2C1_SDA_PIN GPIO_PIN_7
+#define I2C1_SDA_PORT GPIOB
+void I2CClearBus(I2C_HandleTypeDef *instance) {
+	GPIO_InitTypeDef GPIO_InitStruct;
+	int timeout = 100;
+	int timeout_cnt = 0;
+
+	// 1. Clear PE bit.
+	instance->Instance->CR1 &= ~(0x0001);
+
+	//  2. Configure the SCL and SDA I/Os as General Purpose Output Open-Drain, High level (Write 1 to GPIOx_ODR).
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+
+	GPIO_InitStruct.Pin = I2C1_SCL_PIN;
+	HAL_GPIO_Init(I2C1_SCL_PORT, &GPIO_InitStruct);
+	HAL_GPIO_WritePin(I2C1_SCL_PORT, I2C1_SCL_PIN, GPIO_PIN_SET);
+
+	GPIO_InitStruct.Pin = I2C1_SDA_PIN;
+	HAL_GPIO_Init(I2C1_SDA_PORT, &GPIO_InitStruct);
+	HAL_GPIO_WritePin(I2C1_SDA_PORT, I2C1_SDA_PIN, GPIO_PIN_SET);
+
+	// 3. Check SCL and SDA High level in GPIOx_IDR.
+	while (GPIO_PIN_SET != HAL_GPIO_ReadPin(I2C1_SCL_PORT, I2C1_SCL_PIN)) {
+		timeout_cnt++;
+		if (timeout_cnt > timeout)
+			return;
+	}
+
+	while (GPIO_PIN_SET != HAL_GPIO_ReadPin(I2C1_SDA_PORT, I2C1_SDA_PIN)) {
+		// Move clock to release I2C
+		HAL_GPIO_WritePin(I2C1_SCL_PORT, I2C1_SCL_PIN, GPIO_PIN_RESET);
+		asm("nop");
+		HAL_GPIO_WritePin(I2C1_SCL_PORT, I2C1_SCL_PIN, GPIO_PIN_SET);
+
+		timeout_cnt++;
+		if (timeout_cnt > timeout)
+			return;
+	}
+
+	// 4. Configure the SDA I/O as General Purpose Output Open-Drain, Low level (Write 0 to GPIOx_ODR).
+	HAL_GPIO_WritePin(I2C1_SDA_PORT, I2C1_SDA_PIN, GPIO_PIN_RESET);
+
+	//  5. Check SDA Low level in GPIOx_IDR.
+	while (GPIO_PIN_RESET != HAL_GPIO_ReadPin(I2C1_SDA_PORT, I2C1_SDA_PIN)) {
+		timeout_cnt++;
+		if (timeout_cnt > timeout)
+			return;
+	}
+
+	// 6. Configure the SCL I/O as General Purpose Output Open-Drain, Low level (Write 0 to GPIOx_ODR).
+	HAL_GPIO_WritePin(I2C1_SCL_PORT, I2C1_SCL_PIN, GPIO_PIN_RESET);
+
+	//  7. Check SCL Low level in GPIOx_IDR.
+	while (GPIO_PIN_RESET != HAL_GPIO_ReadPin(I2C1_SCL_PORT, I2C1_SCL_PIN)) {
+		timeout_cnt++;
+		if (timeout_cnt > timeout)
+			return;
+	}
+
+	// 8. Configure the SCL I/O as General Purpose Output Open-Drain, High level (Write 1 to GPIOx_ODR).
+	HAL_GPIO_WritePin(I2C1_SCL_PORT, I2C1_SCL_PIN, GPIO_PIN_SET);
+
+	// 9. Check SCL High level in GPIOx_IDR.
+	while (GPIO_PIN_SET != HAL_GPIO_ReadPin(I2C1_SCL_PORT, I2C1_SCL_PIN)) {
+		timeout_cnt++;
+		if (timeout_cnt > timeout)
+			return;
+	}
+
+	// 10. Configure the SDA I/O as General Purpose Output Open-Drain , High level (Write 1 to GPIOx_ODR).
+	HAL_GPIO_WritePin(I2C1_SDA_PORT, I2C1_SDA_PIN, GPIO_PIN_SET);
+
+	// 11. Check SDA High level in GPIOx_IDR.
+	while (GPIO_PIN_SET != HAL_GPIO_ReadPin(I2C1_SDA_PORT, I2C1_SDA_PIN)) {
+		timeout_cnt++;
+		if (timeout_cnt > timeout)
+			return;
+	}
+
+	// 12. Configure the SCL and SDA I/Os as Alternate function Open-Drain.
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+
+	GPIO_InitStruct.Pin = I2C1_SCL_PIN;
+	HAL_GPIO_Init(I2C1_SCL_PORT, &GPIO_InitStruct);
+
+	GPIO_InitStruct.Pin = I2C1_SDA_PIN;
+	HAL_GPIO_Init(I2C1_SDA_PORT, &GPIO_InitStruct);
+
+	HAL_GPIO_WritePin(I2C1_SCL_PORT, I2C1_SCL_PIN, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(I2C1_SDA_PORT, I2C1_SDA_PIN, GPIO_PIN_SET);
+
+	// 13. Set SWRST bit in I2Cx_CR1 register.
+	instance->Instance->CR1 |= 0x8000;
+
+	asm("nop");
+
+	// 14. Clear SWRST bit in I2Cx_CR1 register.
+	instance->Instance->CR1 &= ~0x8000;
+
+	asm("nop");
+
+	// 15. Enable the I2C peripheral by setting the PE bit in I2Cx_CR1 register
+	instance->Instance->CR1 |= 0x0001;
+
+	// Call initialization function.
+	HAL_I2C_Init(instance);
 }
 
 void CheckBoardConnections() {
@@ -113,7 +270,7 @@ void CheckBoardConnections() {
 			if (emeterHandlers[i]->GetInitialised() || bbControllerHandlers[i]->GetInitialised()) {
 				// Board previously connected, so mark the handlers are not initialised
 				emeterHandlers[i]->SetInitialised(false);
-				bbControllerHandlers[i]->SetInitialised(false);
+				// bbControllerHandlers[i]->SetInitialised(false);
 			}
 		}
 		// If board connected
@@ -122,8 +279,8 @@ void CheckBoardConnections() {
 			if (!emeterHandlers[i]->GetInitialised())
 				InitEmeter(*(emeterHandlers[i]));
 
-			if (!bbControllerHandlers[i]->GetInitialised())
-				InitBBController(*(bbControllerHandlers[i]));
+			// if (!bbControllerHandlers[i]->GetInitialised())
+			// 	InitBBController(*(bbControllerHandlers[i]));
 		}
 	}
 }
@@ -137,6 +294,7 @@ void InitEmeter(tEmeter &emeter) {
 	emeterConfig.mode = 0b111;	 // Shunt and Bus continuous mode
 
 	emeter.WriteConfig(&emeterConfig);
+	emeter.CheckStatus();
 	emeter.SetInitialised(true);
 }
 
@@ -147,6 +305,7 @@ void InitBBController(tMPQ4214 &controller) {
 	controllerVRefLsb.VREF_L = 0b000;		 // Initialise VREF to 0
 	controllerVRefMsb.VREF_H = 0b0000'0000;	 // Initialise VREF to 0
 	controller.SetVoltage(&controllerVRefLsb, &controllerVRefMsb);
+	controller.CheckStatus();
 
 	MPQ4214Control1Reg controllerControl1;
 	controllerControl1.SR = 0b00;		 // VRef slew rate = 38 mV/ms
@@ -157,6 +316,7 @@ void InitBBController(tMPQ4214 &controller) {
 	controllerControl1.GO_BIT = 0b0;	 // Disable changing VOut
 	controllerControl1.ENPWR = 0b0;		 // Disable power switching
 	controller.SetControl1(&controllerControl1);
+	controller.CheckStatus();
 
 	MPQ4214Control2Reg controllerControl2;
 	controllerControl2.FSW = 0b00;		 // 200 kHz switching frequency
@@ -164,11 +324,13 @@ void InitBBController(tMPQ4214 &controller) {
 	controllerControl2.OCP_MODE = 0b01;	 // Hiccup protection, no latching
 	controllerControl2.OVP_MODE = 0b10;	 // Latch off protection, no discharge after OVP
 	controller.SetControl2(&controllerControl2);
+	controller.CheckStatus();
 
 	MPQ4214ILIMReg controllerCurrentLim;
 	controllerCurrentLim.ILIM = 0b111;	// Highest current limit, actual limiting done in emeter
 	controllerCurrentLim.unused = 0b00000;
 	controller.SetILIMReg(&controllerCurrentLim);
+	controller.CheckStatus();
 
 	MPQ4214InterruptMask controllerInterruptMask;
 	controllerInterruptMask.M_OTP = 0b0;  // Don't mask interrupt
@@ -177,6 +339,8 @@ void InitBBController(tMPQ4214 &controller) {
 	controllerInterruptMask.M_OCP = 0b0;  // Don't mask interrupt
 	controllerInterruptMask.M_PNG = 0b0;  // Don't mask interrupt
 	controller.SetInterruptMask(&controllerInterruptMask);
+	controller.CheckStatus();
+
 	controller.SetInitialised(true);
 }
 
@@ -189,8 +353,13 @@ void SendEmeterStatus(tEmeter &emeter) {
 	emeterPowerReg power;
 
 	emeter.ReadBusVoltage(&voltage);
+	emeter.CheckStatus();
+
 	emeter.ReadCurrent(&current);
+	emeter.CheckStatus();
+
 	emeter.ReadPower(&power);
+	emeter.CheckStatus();
 
 	uint8_t txData[8];
 	txData[0] = emeter.GetID();
@@ -206,6 +375,7 @@ void SendEmeterStatus(tEmeter &emeter) {
 	txData[7] = power.pd >> 8;
 
 	HAL_CAN_AddTxMessage(&hcan, &emeterCanHeader, txData, &CanTxMailbox);
+	HAL_Delay(1);
 }
 
 void SendThermistorData() {
@@ -222,6 +392,7 @@ void SendThermistorData() {
 	}
 
 	HAL_CAN_AddTxMessage(&hcan, &thermistorCanHeader, txData, &CanTxMailbox);
+	HAL_Delay(1);
 }
 
 void EnableOutput(tMPQ4214 &controller) {
@@ -235,21 +406,30 @@ void EnableOutput(tMPQ4214 &controller) {
 	controllerControl1.GO_BIT = 0b1;	 // Enable changing VOut
 	controllerControl1.ENPWR = 0b0;		 // Disable power switching
 	controller.SetControl1(&controllerControl1);
+	controller.CheckStatus();
 
-	HAL_Delay(5);  // Does this need to be over 20 ms?
+	HAL_Delay(20);	// Does this need to be over 20 ms?
 
 	// Setting this to 1 is 3rd step to power on according to page 35 of datasheet
 	controllerControl1.ENPWR = 0b1;
 	controller.SetControl1(&controllerControl1);
+	controller.CheckStatus();
 }
 
 void SetVoltage(tMPQ4214 &controller, uint16_t millivolts) {
+	float R1 = 82000.0f;
+	float R2 = 10000.0f;
+	float scaledMillivoltsFloat = (static_cast<float>(millivolts) * R2) / (R1 + R2);
+
+	uint16_t scaledMillivolts = static_cast<uint16_t>(scaledMillivoltsFloat);
+
 	MPQ4214VRefLsbReg controllerVRefLsb;
 	MPQ4214VRefMsbReg controllerVRefMsb;
 	controllerVRefLsb.unused = 0b00000;
-	controllerVRefLsb.VREF_L = millivolts & 0b111;		  // Bits 2-0
-	controllerVRefMsb.VREF_H = (millivolts >> 3) & 0xFF;  // Bits 10-3
+	controllerVRefLsb.VREF_L = scaledMillivolts & 0b111;		// Bits 2-0
+	controllerVRefMsb.VREF_H = (scaledMillivolts >> 3) & 0xFF;	// Bits 10-3
 	controller.SetVoltage(&controllerVRefLsb, &controllerVRefMsb);
+	controller.CheckStatus();
 }
 
 // CAN Rx interrupt handler
@@ -259,12 +439,18 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *p_hcan) {
 	if (HAL_CAN_GetRxMessage(p_hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
 		g_CanRxTick = 0;
 
-	if (rxData[0] == 1) {
+	if (rxData[0] == 0) {
+		command = 0;
+	} else if (rxData[0] == 1) {
 		command = 1;
 	} else if (rxData[0] == 2) {
 		command = 2;
 	} else if (rxData[0] == 3) {
 		command = 3;
+	} else if (rxData[0] == 16) {
+		command = 16;
+	} else if (rxData[0] == 17) {
+		command = 17;
 	} else {
 		command = -1;
 	}

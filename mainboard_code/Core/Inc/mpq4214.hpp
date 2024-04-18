@@ -27,6 +27,8 @@ class tMPQ4214 {
 
 	void FindAddress(MPQ4214VRefLsbReg* lsbReg);
 
+	void CheckStatus();
+
    private:
 	I2C_HandleTypeDef* m_phi2c;
 

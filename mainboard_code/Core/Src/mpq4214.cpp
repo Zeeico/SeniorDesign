@@ -4,6 +4,15 @@
 /* Public functions */
 /********************/
 
+static int lastBadStatus = 0;
+
+void tMPQ4214::CheckStatus() {
+	if (m_Status != 0) {
+		lastBadStatus = m_Status;
+	}
+	m_Status = 0;
+}
+
 tMPQ4214::tMPQ4214(I2C_HandleTypeDef* phi2c, eMPQ4214AddrPins addrPin, uint8_t id) {
 	m_phi2c = phi2c;
 	m_ID = id;
@@ -55,57 +64,85 @@ void tMPQ4214::SetVoltage(MPQ4214VRefLsbReg* lsbReg, MPQ4214VRefMsbReg* msbReg) 
 	// FindAddress(lsbReg);
 	HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(m_phi2c, m_writingAddress, eMPQ4214Registers::REF_LSB, I2C_MEMADD_SIZE_8BIT, (uint8_t*)lsbReg, sizeof(*lsbReg), 1000);
 	if (ret != HAL_OK) {
-		m_Status++;
+		m_Status |= 1 << 0;
+	} else {
+		m_Status &= ~(1 << 0);
 	}
 
 	ret = HAL_I2C_Mem_Write(m_phi2c, m_writingAddress, eMPQ4214Registers::REF_MSB, I2C_MEMADD_SIZE_8BIT, (uint8_t*)msbReg, sizeof(*msbReg), 1000);
 	if (ret != HAL_OK) {
-		m_Status++;
+		m_Status |= 1 << 1;
+	} else {
+		m_Status &= ~(1 << 1);
 	}
-	m_Status = 10;
 }
 
 void tMPQ4214::ReadVoltage(MPQ4214VRefLsbReg* lsbReg, MPQ4214VRefMsbReg* msbReg) {
-	HAL_I2C_Mem_Read(m_phi2c, m_writingAddress, eMPQ4214Registers::REF_LSB, I2C_MEMADD_SIZE_8BIT, (uint8_t*)lsbReg, sizeof(*lsbReg), 1000);
+	HAL_StatusTypeDef ret = HAL_I2C_Mem_Read(m_phi2c, m_writingAddress, eMPQ4214Registers::REF_LSB, I2C_MEMADD_SIZE_8BIT, (uint8_t*)lsbReg, sizeof(*lsbReg), 1000);
+	if (ret != HAL_OK) {
+		m_Status |= 1 << 2;
+	} else {
+		m_Status &= ~(1 << 2);
+	}
 
-	HAL_I2C_Mem_Read(m_phi2c, m_writingAddress, eMPQ4214Registers::REF_MSB, I2C_MEMADD_SIZE_8BIT, (uint8_t*)msbReg, sizeof(*msbReg), 1000);
+	ret = HAL_I2C_Mem_Read(m_phi2c, m_writingAddress, eMPQ4214Registers::REF_MSB, I2C_MEMADD_SIZE_8BIT, (uint8_t*)msbReg, sizeof(*msbReg), 1000);
+	if (ret != HAL_OK) {
+		m_Status |= 1 << 3;
+	} else {
+		m_Status &= ~(1 << 3);
+	}
 }
 
 void tMPQ4214::SetControl1(MPQ4214Control1Reg* reg) {
 	HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(m_phi2c, m_writingAddress, eMPQ4214Registers::Control1, I2C_MEMADD_SIZE_8BIT, (uint8_t*)reg, sizeof(*reg), 1000);
 	if (ret != HAL_OK) {
-		m_Status++;
+		m_Status |= 1 << 4;
+	} else {
+		m_Status &= ~(1 << 4);
 	}
 }
 
 void tMPQ4214::SetControl2(MPQ4214Control2Reg* reg) {
 	HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(m_phi2c, m_writingAddress, eMPQ4214Registers::Control2, I2C_MEMADD_SIZE_8BIT, (uint8_t*)reg, sizeof(*reg), 1000);
 	if (ret != HAL_OK) {
-		m_Status++;
+		m_Status |= 1 << 5;
+	} else {
+		m_Status &= ~(1 << 5);
 	}
 }
 
 void tMPQ4214::SetILIMReg(MPQ4214ILIMReg* reg) {
 	HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(m_phi2c, m_writingAddress, eMPQ4214Registers::ILIM, I2C_MEMADD_SIZE_8BIT, (uint8_t*)reg, sizeof(*reg), 1000);
 	if (ret != HAL_OK) {
-		m_Status++;
+		m_Status |= 1 << 6;
+	} else {
+		m_Status &= ~(1 << 6);
 	}
 }
 
 void tMPQ4214::SetInterruptStatus(MPQ4214InterruptStatus* reg) {
 	HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(m_phi2c, m_writingAddress, eMPQ4214Registers::InterruptStatus, I2C_MEMADD_SIZE_8BIT, (uint8_t*)reg, sizeof(*reg), 1000);
 	if (ret != HAL_OK) {
-		m_Status++;
+		m_Status |= 1 << 7;
+	} else {
+		m_Status &= ~(1 << 7);
 	}
 }
 
 void tMPQ4214::ReadInterruptStatus(MPQ4214InterruptStatus* reg) {
-	HAL_I2C_Mem_Read(m_phi2c, m_writingAddress, eMPQ4214Registers::InterruptStatus, I2C_MEMADD_SIZE_8BIT, (uint8_t*)reg, sizeof(*reg), 1000);
+	HAL_StatusTypeDef ret = HAL_I2C_Mem_Read(m_phi2c, m_writingAddress, eMPQ4214Registers::InterruptStatus, I2C_MEMADD_SIZE_8BIT, (uint8_t*)reg, sizeof(*reg), 1000);
+	if (ret != HAL_OK) {
+		m_Status |= 1 << 8;
+	} else {
+		m_Status &= ~(1 << 8);
+	}
 }
 
 void tMPQ4214::SetInterruptMask(MPQ4214InterruptMask* reg) {
 	HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(m_phi2c, m_writingAddress, eMPQ4214Registers::InterruptMask, I2C_MEMADD_SIZE_8BIT, (uint8_t*)reg, sizeof(*reg), 1000);
 	if (ret != HAL_OK) {
-		m_Status++;
+		m_Status |= 1 << 9;
+	} else {
+		m_Status &= ~(1 << 9);
 	}
 }
