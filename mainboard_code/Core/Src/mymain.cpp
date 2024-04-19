@@ -16,6 +16,8 @@ static constexpr int cInvalidVoltageCmd = 0xFFFF;
 static constexpr int cNumMaxPowerBoards = 4;
 
 static constexpr int cPowerBoardADCDetectedThreshold = 800;
+
+static constexpr uint32_t cADCResolution = 4096;
 }  // namespace
 
 uint32_t g_CanTxTick = 0;		 // Decrements, send message when it is 0
@@ -43,6 +45,8 @@ void InitEmeter(tEmeter &emeter);
 void InitBBController(tMPQ4214 &controller);
 void SendEmeterStatus(tEmeter &emeter);
 void SendThermistorData();
+uint32_t CalculateThermistorResistance(uint32_t thermistorValue);
+uint32_t ConvertResistanceToTemp(uint32_t thermistance);
 
 void EnableOutput(tMPQ4214 &controller);
 void SetVoltage(tMPQ4214 &controller, uint16_t millivolts);
@@ -376,4 +380,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	// Clear the interrupts
 	uint8_t statusReset = 0xFF;
 	p_controller->SetInterruptStatus((MPQ4214InterruptStatus *)(&statusReset));
+}
+
+// Calculate thermistor resistance based on STM voltage reading
+uint32_t CalculateThermistorResistance(uint32_t thermistorValue) {
+
+	uint32_t voltage = thermistorValue / cADCResolution;
+	return (( 30000 / voltage ) - 10000);
+}
+
+// Use a LUT to convert our resistance reading to a temperature, accurate to the nearest degree
+uint32_t ConvertResistanceToTemp(uint32_t thermistance) {
+	
 }

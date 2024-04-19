@@ -7,6 +7,7 @@
 #include "mymain.h"
 
 std::array<uint32_t, 4> thermistorValues;
+std::array<uint32_t, 4> thermistorResistanceValues;
 
 extern tEmeter emeter0;
 extern tEmeter emeter1;
