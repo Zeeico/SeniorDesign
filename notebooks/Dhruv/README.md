@@ -42,3 +42,17 @@ Re-did RC filter and ADC op-amp math with Akash, with the aim of maximising volt
 - Completed individual progress report.
 - Creating priority task list to ensure progress.
 
+### 4/10/24 ###
+
+- Creating a look up table to convert voltage readings across the thermistor on each powerstage board to a temperature value. Added as a CSV in the 'docs' folder.
+- Calculations as below. Variable names follow convention from PCB schematics.
+- Raw data for table taken from [datasheet](https://product.tdk.com/system/files/dam/doc/product/sensor/ntc/chip-ntc-thermistor/data_sheet/datasheet_ntcg103jx103dt1s.pdf)
+
+![WhatsApp Image 2024-04-18 at 11 52 28 PM](https://github.com/Zeeico/SeniorDesign/assets/100447224/ba4bfcb6-f770-4736-bbfd-bf77b28d43d8)
+
+According to our schematics, our NTC thermistor forms a voltage divider circuit across 5V with constant 10kOhm resistor (R15 in the 2nd image below).
+![image](https://github.com/Zeeico/SeniorDesign/assets/100447224/29c8c47d-b51e-4983-be10-bb54628c0cd8)
+![image](https://github.com/Zeeico/SeniorDesign/assets/100447224/7ef2947a-cfcb-4f58-8c88-94584f3a42e7)
+
+After the Op-Amp filtering, the 5V value is scaled using another voltage divider to turn it into a 3V3 foltage that the STM can safely read. Applying this conversion as well, we can create a transfer function from resistance to voltage. Applying this function to the data from datasheet, we can create a lookup table for voltage to temperature conversion :).
+
