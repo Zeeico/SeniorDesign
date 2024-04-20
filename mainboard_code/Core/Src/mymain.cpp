@@ -1,6 +1,8 @@
 #include "mymain.h"
 
+#include "cmath"
 #include "mymain.hpp"
+#include "thermistorLUT.hpp"
 
 namespace {
 static constexpr uint32_t cVoltageSetId = 0x100;
@@ -16,6 +18,8 @@ static constexpr int cInvalidVoltageCmd = 0xFFFF;
 static constexpr int cNumMaxPowerBoards = 4;
 
 static constexpr int cPowerBoardADCDetectedThreshold = 800;
+
+static constexpr int temperatureLUTOffset = 998;
 }  // namespace
 
 uint32_t g_CanTxTick = 0;		 // Decrements, send message when it is 0
@@ -143,7 +147,7 @@ int mymain() {
 		}
 
 		else if (command == 18) {
-			// I2CClearBus(&hi2c1);
+			I2CClearBus(&hi2c1);
 			command = -1;
 		}
 	}
@@ -381,13 +385,14 @@ void SendEmeterStatus(tEmeter &emeter) {
 void SendThermistorData() {
 	uint8_t txData[8];
 	for (unsigned int i = 0; i < thermistorValues.size(); i++) {
-		if (thermistorValues[i] < cPowerBoardADCDetectedThreshold) {
+		if (thermistorValues[i] < std::max(cPowerBoardADCDetectedThreshold, temperatureLUTOffset)) {
 			// 0xFFFF indicates invalid data
 			txData[2 * i] = 0xFF;
 			txData[2 * i + 1] = 0xFF;
 		} else {
-			txData[2 * i] = thermistorValues[i] & 0xFF;
-			txData[2 * i + 1] = (thermistorValues[i] >> 8) & 0x0F;	// Should be 12 bit values, so masking top 4 bits
+			uint16_t realTemperature = temperatureLUT[thermistorValues[i] - temperatureLUTOffset];
+			txData[2 * i] = realTemperature & 0xFF;
+			txData[2 * i + 1] = (realTemperature >> 8) & 0xFF;	// Should be 12 bit values, so masking top 4 bits
 		}
 	}
 

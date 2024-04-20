@@ -6,6 +6,7 @@
         "array": "cpp",
         "compare": "cpp",
         "stm32f1xx_it.h": "c",
-        "main.h": "c"
+        "main.h": "c",
+        "limits": "cpp"
     },
 }

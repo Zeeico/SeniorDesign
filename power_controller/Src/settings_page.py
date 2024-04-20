@@ -102,7 +102,7 @@ class SettingsPage(ft.Stack):
                                     if plot_dict["data_name"] == "Temperature":
                                         output_id = outputNames.index(plot_dict["output_name"])
                                         if temperature_values[output_id] != 0xFFFF:
-                                            self.page.plots_page.add_data(temperature_values[output_id], plot_dict["plot_index"])
+                                            self.page.plots_page.add_data(temperature_values[output_id] / 100, plot_dict["plot_index"])
 
             except KeyboardInterrupt:
                 exit()
