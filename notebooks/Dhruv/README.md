@@ -56,3 +56,13 @@ According to our schematics, our NTC thermistor forms a voltage divider circuit 
 
 After the Op-Amp filtering, the 5V value is scaled using another voltage divider to turn it into a 3V3 foltage that the STM can safely read. Applying this conversion as well, we can create a transfer function from resistance to voltage. Applying this function to the data from datasheet, we can create a lookup table for voltage to temperature conversion :).
 
+### 4/15/24 ###
+
+- Debugging PCBs. During testing, we managed to burn through a 3.3V LDO, consequently killing our microcontroller. We dicovered this was due to a short circuit between 3.3V, GND and 12V on the board itself.
+- Our debugging steps included removing the damaged components and measuring resistance between the lines. The short was still present, so we continued removing components that spanned these nets till the short disappeared.
+- After re-soldering the components and turning the board on without the microcontroller, we found the rails to be stable. Thus, we validated that out issue was most likely caused by poor soldering.
+
+### 4/20/24 ###
+
+- Created a python script to help create the LUT for reading thermistor values.
+- Interpolated datasheet values to make the LUT easier to use.
