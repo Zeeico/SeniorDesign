@@ -23,10 +23,12 @@ class SettingsPage(ft.Stack):
         self.page = page
         self.appbar = appbar
 
-        self.output_col_1 = OutputSettings(1)
-        self.output_col_2 = OutputSettings(2)
-        self.output_col_3 = OutputSettings(3)
-        self.output_col_4 = OutputSettings(4)
+        self.tx_queue = []
+
+        self.output_col_1 = OutputSettings(1, self)
+        self.output_col_2 = OutputSettings(2, self)
+        self.output_col_3 = OutputSettings(3, self)
+        self.output_col_4 = OutputSettings(4, self)
 
     def did_mount(self):
         self.all_controls = ft.Column(
@@ -71,6 +73,13 @@ class SettingsPage(ft.Stack):
                         canHandler = self.appbar.can_handlers[hndlr_ids.pop()]
 
                         for channel in range(canHandler.num_open_channels):
+                            # Send messages first
+                            while len(self.tx_queue) != 0:
+                                message = self.tx_queue[0]
+                                canHandler.send_message(channel, message["id"], message["data"])
+                                self.tx_queue.remove(message)
+
+                            # Read afterwards
                             frame = canHandler.read_message(channel)
                             if frame.id == 0:
                                 continue
@@ -108,4 +117,8 @@ class SettingsPage(ft.Stack):
                 exit()
 
         for handler in self.appbar.can_handlers:
-            handler.close_channel()
+            for channel in range(handler.num_open_channels):
+                handler.close_channel(channel)
+
+    def add_message_can_queue(self, id, data):
+        self.tx_queue.append({"id": id, "data": data})
