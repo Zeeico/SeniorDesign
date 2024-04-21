@@ -1,4 +1,4 @@
-from canlib import canlib
+from canlib import canlib, Frame
 from CAN.base_can_handler import AbstractCanHandler, CanMessage
 
 # The bitrates canlib supports
@@ -63,3 +63,12 @@ class KvaserCanHandler(AbstractCanHandler):
             return CanMessage(id=0, data=[], dlc=0)
 
         return CanMessage(id=frame.id, data=frame.data, dlc=frame.dlc)
+
+    def send_message(self, i, id, data):
+        if i < 0 or i >= self.num_open_channels:
+            return -1
+
+        key = list(self.active_channels.keys())[i]
+
+        frame = Frame(id_=id, data=data)
+        self.active_channels[key].write(frame)

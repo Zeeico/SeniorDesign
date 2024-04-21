@@ -83,3 +83,18 @@ class PcanCanHandler(AbstractCanHandler):
             return CanMessage(0, [], 0)
 
         return CanMessage(frame.ID, frame.DATA[:], frame.LEN)
+
+    def send_message(self, i, id, data):
+        if i < 0 or i >= self.num_open_channels:
+            return -1
+
+        # Should work, but still untested!
+        key = list(self.active_channels.keys())[i]
+        message = TPCANMsg()
+        message.ID = id
+        message.MSGTYPE = PCAN_MESSAGE_STANDARD
+        message.LEN = 8
+        for i in range(8):
+            message.DATA[i] = data[i]
+
+        self.active_channels[key].Write(usb_channels[key], message)
