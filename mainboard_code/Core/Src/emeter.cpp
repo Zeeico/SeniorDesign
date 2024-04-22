@@ -37,6 +37,10 @@ void tEmeter::ReadBusVoltage(emeterBusVoltageReg* reg) {
 	ReadRegister((uint16_t*)reg, eEmeterRegisters::BusVoltage);
 }
 
+void tEmeter::ReadShuntVoltage(emeterShuntVoltageReg* reg) {
+	ReadRegister((uint16_t*)reg, eEmeterRegisters::ShuntVoltage);
+}
+
 void tEmeter::ReadPower(emeterPowerReg* reg) {
 	ReadRegister((uint16_t*)reg, eEmeterRegisters::Power);
 }

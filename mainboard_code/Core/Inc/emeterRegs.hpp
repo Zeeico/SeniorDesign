@@ -47,3 +47,8 @@ struct __attribute__((packed, aligned(sizeof(uint16_t)))) emeterCurrentReg {
 struct __attribute__((packed, aligned(sizeof(uint16_t)))) emeterCalibrationReg {
 	uint16_t fs;
 };
+
+struct __attribute__((packed, aligned(sizeof(uint16_t)))) emeterShuntVoltageReg {
+	uint16_t sd : 14;
+	uint16_t sign : 2;
+};

@@ -92,10 +92,12 @@ class SettingsPage(ft.Stack):
                                     if plot_dict["output_name"] == output_name:
                                         if plot_dict["data_name"] == "Voltage":
                                             plot_data = (frame.data[2]) + ((frame.data[3]) << 8)
+                                            plot_data = plot_data * 0.004
                                             self.page.plots_page.add_data(plot_data, plot_dict["plot_index"])
 
                                         elif plot_dict["data_name"] == "Current":
                                             plot_data = (frame.data[4]) + ((frame.data[5]) << 8)
+                                            plot_data = plot_data * (4 / (2**15))
                                             self.page.plots_page.add_data(plot_data, plot_dict["plot_index"])
 
                                         elif plot_dict["data_name"] == "Power":

@@ -55,6 +55,8 @@ int akash_red_bull_counter = 0;
 
 std::array<bool, 4> enablePins = {false, false, false, false};
 
+int checkShuntVoltage = 0;
+
 int mymain() {
 	akash_red_bull_counter++;
 	// Final setup not handled by cubemx generated code
@@ -94,6 +96,12 @@ int mymain() {
 			SendThermistorData();
 			g_CanTxTick = cEmeterFeedbackPeriod - 5;  // Account for the delays in the functions
 		}
+
+		// if (checkShuntVoltage == 1) {
+		// 	emeterShuntVoltageReg reg;
+		// 	emeter3.ReadShuntVoltage(&reg);
+		// 	checkShuntVoltage = 0;
+		// }
 	}
 }
 
@@ -123,9 +131,17 @@ void InitEmeter(tEmeter &emeter) {
 	emeterConfig.pg = 0b10;		 // PG gain of 1/4, range of ±160 mV
 	emeterConfig.badc = 0b0011;	 // 12 bit ADC, 532 μs conversion time
 	emeterConfig.mode = 0b111;	 // Shunt and Bus continuous mode
-
 	emeter.WriteConfig(&emeterConfig);
 	emeter.CheckStatus();
+
+	emeterCalibrationReg emeterCalibration;
+	static int shuntResistance = 15;  // mOhm
+	// static float shuntResistance = 0.015;  // mOhm
+	static float currentLSB = 4 / (std::pow(2, 15));
+	emeterCalibration.fs = std::floor(0.04096 / (currentLSB * shuntResistance));
+	emeter.WriteCalibration(&emeterCalibration);
+	emeter.CheckStatus();
+
 	emeter.SetInitialised(true);
 }
 
@@ -143,7 +159,7 @@ void InitBBController(tMPQ4214 &controller) {
 	controller.CheckStatus();
 
 	MPQ4214Control1Reg controllerControl1;
-	controllerControl1.SR = 0b00;		 // VRef slew rate = 38 mV/ms
+	controllerControl1.SR = 0b11;		 // VRef slew rate = 38 mV/ms
 	controllerControl1.DISCHG = 0b0;	 // Disable output discharge resistor
 	controllerControl1.Dither = 0b0;	 // Disable dither
 	controllerControl1.PNG_Latch = 0b1;	 // Activate Power Not Good latch
@@ -196,6 +212,10 @@ void SendEmeterStatus(tEmeter &emeter) {
 	emeter.ReadPower(&power);
 	emeter.CheckStatus();
 
+	emeterShuntVoltageReg reg;
+	emeter3.ReadShuntVoltage(&reg);
+	emeter.CheckStatus();
+
 	uint8_t txData[8];
 	txData[0] = emeter.GetID();
 
@@ -206,8 +226,8 @@ void SendEmeterStatus(tEmeter &emeter) {
 	txData[4] = signedCurrent & 0xFF;
 	txData[5] = signedCurrent >> 8;
 
-	txData[6] = power.pd & 0xFF;
-	txData[7] = power.pd >> 8;
+	txData[6] = reg.sd & 0xFF;
+	txData[7] = reg.sd >> 8;
 
 	HAL_CAN_AddTxMessage(&hcan, &emeterCanHeader, txData, &CanTxMailbox);
 	HAL_Delay(1);
@@ -234,7 +254,7 @@ void SendThermistorData() {
 void EnableOutput(tMPQ4214 &controller) {
 	// Call this function after setting VRef
 	MPQ4214Control1Reg controllerControl1;
-	controllerControl1.SR = 0b00;		 // VRef slew rate = 38 mV/ms
+	controllerControl1.SR = 0b11;		 // VRef slew rate = 38 mV/ms
 	controllerControl1.DISCHG = 0b1;	 // Disable output discharge resistor
 	controllerControl1.Dither = 0b0;	 // Disable dither
 	controllerControl1.PNG_Latch = 0b1;	 // Activate Power Not Good latch
@@ -244,7 +264,7 @@ void EnableOutput(tMPQ4214 &controller) {
 	controller.SetControl1(&controllerControl1);
 	controller.CheckStatus();
 
-	HAL_Delay(20);	// Does this need to be over 20 ms?
+	// HAL_Delay(20);	// Does this need to be over 20 ms?
 
 	// Setting this to 1 is 3rd step to power on according to page 35 of datasheet
 	controllerControl1.ENPWR = 0b1;
@@ -266,7 +286,7 @@ void SetVoltage(tMPQ4214 &controller, uint16_t millivolts) {
 	controllerVRefMsb.VREF_H = (scaledMillivolts >> 3) & 0xFF;	// Bits 10-3
 	controller.SetVoltage(&controllerVRefLsb, &controllerVRefMsb);
 	controller.CheckStatus();
-	HAL_Delay(3);  // Delay to allow time for the BB Controller to do its thing, maybe remove later?
+	// HAL_Delay(3);  // Delay to allow time for the BB Controller to do its thing, maybe remove later?
 }
 
 // CAN Rx interrupt handler

@@ -13,6 +13,8 @@ class tEmeter {
 	void ReadCurrent(emeterCurrentReg* reg);
 	void WriteCalibration(emeterCalibrationReg* reg);
 
+	void ReadShuntVoltage(emeterShuntVoltageReg* reg);
+
 	uint8_t GetID() { return m_ID; }
 
 	void SetInitialised(bool val) { m_Initialised = val; }

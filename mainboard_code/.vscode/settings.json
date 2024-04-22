@@ -7,6 +7,7 @@
         "compare": "cpp",
         "stm32f1xx_it.h": "c",
         "main.h": "c",
-        "limits": "cpp"
+        "limits": "cpp",
+        "cmath": "cpp"
     },
 }
