@@ -7,8 +7,10 @@ from enum import IntFlag
 class can_ids(IntFlag):
     VSet = 0x100
     RelaySet = 0x200
-    emeterFeedback = 0x300
-    thermistorFeedback = 0x400  # Send 0xFFFF to indicate invalid temperature
+    EmeterFeedback = 0x300
+    ThermistorFeedback = 0x400  # Send 0xFFFF to indicate invalid temperature
+    RelayFeedback = 0x500
+    SignOfLife = 0x600
 
 
 outputNames = ["Output 1", "Output 2", "Output 3", "Output 4"]
@@ -24,7 +26,11 @@ class SettingsPage(ft.Stack):
         self.appbar = appbar
 
         self.tx_queue = []
-        self.temperature_values = [0, 0, 0, 0]
+        self.temperature_values = [-1, -1, -1, -1]
+        self.relay_status = [0, 0, 0, 0]
+
+        self.sign_of_life_period = 100  # ms
+        self.sign_of_life_tick = 0
 
         self.output_col_1 = OutputSettings(1, self)
         self.output_col_2 = OutputSettings(2, self)
@@ -34,7 +40,21 @@ class SettingsPage(ft.Stack):
         self.show_all_outputs = True
 
     def did_mount(self):
-        self.hide_unused_outputs_checkbox = ft.Checkbox(label="Only show connected outputs", value=False, on_change=lambda _: self.toggle_visible_outputs())
+        self.hide_unused_outputs_checkbox = ft.Checkbox(
+            label="Only show connected outputs",
+            value=False,
+            on_change=lambda _: self.toggle_visible_outputs(),
+        )
+
+        self.can_tx_period_text = ft.Text(f"CAN sign of life period: {self.sign_of_life_period} ms")
+        self.can_tx_period_slider = ft.Slider(
+            min=0,
+            max=2000,
+            label="{value} ms",
+            divisions=20,
+            value=self.sign_of_life_period,
+            on_change_end=lambda e: self.update_can_tx_period(e.control.value),
+        )
 
         self.all_controls = ft.Column(
             [
@@ -52,6 +72,8 @@ class SettingsPage(ft.Stack):
                         ft.Container(height=4),
                         ft.Text("Main Settings", size=20),
                         self.hide_unused_outputs_checkbox,
+                        self.can_tx_period_text,
+                        self.can_tx_period_slider,
                     ],
                     expand=True,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -80,6 +102,13 @@ class SettingsPage(ft.Stack):
 
                         for channel in range(canHandler.num_open_channels):
                             # Send messages first
+                            # First, send sign of life message
+                            if (time.time() * 1000) > (self.sign_of_life_tick + self.sign_of_life_period):
+                                sign_of_life_data = [0, 0, 0, 0, 0, 0, 0, 0]
+                                canHandler.send_message(channel, can_ids.SignOfLife, sign_of_life_data)
+                                self.sign_of_life_tick = time.time() * 1000
+
+                            # Then any messages in the queue
                             while len(self.tx_queue) != 0:
                                 message = self.tx_queue[0]
                                 canHandler.send_message(channel, message["id"], message["data"])
@@ -90,7 +119,7 @@ class SettingsPage(ft.Stack):
                             if frame.id == 0:
                                 continue
 
-                            if frame.id == can_ids.emeterFeedback:
+                            if frame.id == can_ids.EmeterFeedback:
                                 # Add emeter data here
                                 output_name = outputNames[frame.data[0]]
 
@@ -110,7 +139,7 @@ class SettingsPage(ft.Stack):
                                             plot_data = (frame.data[6]) + ((frame.data[7]) << 8)
                                             self.page.plots_page.add_data(plot_data, plot_dict["plot_index"])
 
-                            elif frame.id == can_ids.thermistorFeedback:
+                            elif frame.id == can_ids.ThermistorFeedback:
                                 self.temperature_values = [0, 0, 0, 0]
                                 for i in range(4):
                                     self.temperature_values[i] = frame.data[2 * i] + (frame.data[2 * i + 1] << 8)
@@ -122,6 +151,13 @@ class SettingsPage(ft.Stack):
                                         output_id = outputNames.index(plot_dict["output_name"])
                                         if self.temperature_values[output_id] != 0xFFFF:
                                             self.page.plots_page.add_data(self.temperature_values[output_id] / 100, plot_dict["plot_index"])
+
+                            elif frame.id == can_ids.RelayFeedback:
+                                self.relay_status = frame.data[:4]
+                                self.output_col_1.update_relay_status(bool(self.relay_status[0]))
+                                self.output_col_2.update_relay_status(bool(self.relay_status[1]))
+                                self.output_col_3.update_relay_status(bool(self.relay_status[2]))
+                                self.output_col_4.update_relay_status(bool(self.relay_status[3]))
 
             except KeyboardInterrupt:
                 exit()
@@ -138,6 +174,14 @@ class SettingsPage(ft.Stack):
         self.show_hide_outputs()
 
     def show_hide_outputs(self):
+        if self.temperature_values[0] == -1:
+            return
+
+        self.output_col_1.set_detected(True if self.temperature_values[0] != 0xFFFF else False)
+        self.output_col_2.set_detected(True if self.temperature_values[1] != 0xFFFF else False)
+        self.output_col_3.set_detected(True if self.temperature_values[2] != 0xFFFF else False)
+        self.output_col_4.set_detected(True if self.temperature_values[3] != 0xFFFF else False)
+
         if self.show_all_outputs:
             self.output_col_1.visible = True
             self.output_col_2.visible = True
@@ -145,9 +189,14 @@ class SettingsPage(ft.Stack):
             self.output_col_4.visible = True
 
         else:
-            self.output_col_1.visible = True if self.temperature_values[0] != 0xFFFF else False
-            self.output_col_2.visible = True if self.temperature_values[1] != 0xFFFF else False
-            self.output_col_3.visible = True if self.temperature_values[2] != 0xFFFF else False
-            self.output_col_4.visible = True if self.temperature_values[3] != 0xFFFF else False
+            self.output_col_1.visible = self.output_col_1.detected  # True if self.temperature_values[0] != 0xFFFF else False
+            self.output_col_2.visible = self.output_col_2.detected  # True if self.temperature_values[1] != 0xFFFF else False
+            self.output_col_3.visible = self.output_col_3.detected  # True if self.temperature_values[2] != 0xFFFF else False
+            self.output_col_4.visible = self.output_col_4.detected  # True if self.temperature_values[3] != 0xFFFF else False
 
+        self.update()
+
+    def update_can_tx_period(self, period):
+        self.sign_of_life_period = period
+        self.can_tx_period_text.value = f"CAN sign of life period: {int(self.sign_of_life_period)} ms"
         self.update()
