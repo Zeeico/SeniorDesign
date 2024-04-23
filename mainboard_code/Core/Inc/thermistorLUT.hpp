@@ -1,4 +1,4 @@
-#include "mymain.hpp"
+#include "mymain.h"
 
 uint16_t temperatureLUT[2613] = {
 	0,

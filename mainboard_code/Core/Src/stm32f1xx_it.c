@@ -179,6 +179,7 @@ void SysTick_Handler(void) {
 		g_BoardDetectTick--;
 
 	g_CanRxTick++;
+	g_TemperatureDebouncingTick++;
 
 	/* USER CODE END SysTick_IRQn 0 */
 	HAL_IncTick();

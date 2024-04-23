@@ -16,6 +16,7 @@ int mymain();
 extern uint32_t g_CanTxTick;
 extern uint32_t g_CanRxTick;
 extern uint32_t g_BoardDetectTick;
+extern uint32_t g_TemperatureDebouncingTick;
 
 extern CAN_HandleTypeDef hcan;
 

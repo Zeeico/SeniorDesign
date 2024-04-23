@@ -103,10 +103,8 @@ int main(void) {
 	MX_I2C2_Init();
 	MX_ADC1_Init();
 	/* USER CODE BEGIN 2 */
-	// TODO: Check that it is indeed 4, and not 4 * sizeof(thermistorValues[0])
-	// HAL_ADC_Start_DMA(&hadc1, thermistorValues, 4);
-
 	mymain();
+
 	/* USER CODE END 2 */
 
 	/* Infinite loop */

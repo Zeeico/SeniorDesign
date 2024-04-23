@@ -5,13 +5,20 @@
 #include "thermistorLUT.hpp"
 
 namespace {
+// CAN IDs
 static constexpr uint32_t cVoltageSetId = 0x100;
 static constexpr uint32_t cRelaySetId = 0x200;
 static constexpr uint32_t cEmeterFeedbackId = 0x300;
 static constexpr uint32_t cThermistorFeedbackId = 0x400;
+static constexpr uint32_t cRelayFeedbackId = 0x500;
+static constexpr uint32_t cSignOfLifeId = 0x600;
 
-static constexpr uint32_t cEmeterFeedbackPeriod = 50;  // ms
-static constexpr uint32_t cBoardDetectPeriod = 250;	   // ms
+static constexpr uint32_t cEmeterFeedbackPeriod = 50;	 // ms
+static constexpr uint32_t cBoardDetectPeriod = 250;		 // ms
+static constexpr uint32_t cMaxCANRxPeriod = 500;		 // ms
+static constexpr uint32_t cTemperatureDebouncing = 250;	 // ms
+
+static constexpr uint16_t cMaxTemperature = 60 * 100;  // °C * 100
 
 static constexpr int cInvalidVoltageCmd = 0xFFFF;
 
@@ -22,40 +29,25 @@ static constexpr int cPowerBoardADCDetectedThreshold = 800;
 static constexpr int temperatureLUTOffset = 998;
 }  // namespace
 
-uint32_t g_CanTxTick = 0;		 // Decrements, send message when it is 0
-uint32_t g_CanRxTick = 0;		 // Increments, reset to 0 whenever a CAN message is received
-uint32_t g_BoardDetectTick = 0;	 // Used to periodically check for the presence of boards (cBoardDetectPeriod)
+uint32_t g_CanTxTick = 0;				   // Decrements, send message when it is 0
+uint32_t g_CanRxTick = 0;				   // Increments, reset to 0 whenever a CAN message is received
+uint32_t g_BoardDetectTick = 0;			   // Used to periodically check for the presence of boards (cBoardDetectPeriod)
+uint32_t g_TemperatureDebouncingTick = 0;  // Used to prevent premature alarm pin activation
 
-tEmeter emeter0(&hi2c2, eEmeterAddrPins::VS, eEmeterAddrPins::GND, 0);
-tEmeter emeter1(&hi2c2, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 1);
-tEmeter emeter2(&hi2c1, eEmeterAddrPins::GND, eEmeterAddrPins::GND, 2);
-tEmeter emeter3(&hi2c1, eEmeterAddrPins::VS, eEmeterAddrPins::GND, 3);
-std::array<tEmeter *, 4> emeterHandlers = {&emeter0, &emeter1, &emeter2, &emeter3};
+// Arrays of pointers to the emeter and bb controller classes, used to simplify the code
+std::array<tEmeter *, cNumMaxPowerBoards> emeterHandlers = {&emeter0, &emeter1, &emeter2, &emeter3};
+std::array<tMPQ4214 *, cNumMaxPowerBoards> bbControllerHandlers = {&bbController0, &bbController1, &bbController2, &bbController3};
 
-tMPQ4214 bbController0(&hi2c2, eMPQ4214AddrPins::VLvl4, 0);
-tMPQ4214 bbController1(&hi2c2, eMPQ4214AddrPins::VLvl1, 1);
-tMPQ4214 bbController2(&hi2c1, eMPQ4214AddrPins::VLvl1, 2);
-tMPQ4214 bbController3(&hi2c1, eMPQ4214AddrPins::VLvl4, 3);
-std::array<tMPQ4214 *, 4> bbControllerHandlers = {&bbController0, &bbController1, &bbController2, &bbController3};
+int akash_red_bull_counter = 0;	 // Program counter
 
-CAN_TxHeaderTypeDef emeterCanHeader;
-CAN_TxHeaderTypeDef thermistorCanHeader;
-uint32_t CanTxMailbox;
+// Values of the relay_cmd GPIO outputs
+std::array<bool, cNumMaxPowerBoards> enablePins = {false, false, false, false};
 
-void CheckBoardConnections();
-void InitEmeter(tEmeter &emeter);
-void InitBBController(tMPQ4214 &controller);
-void SendEmeterStatus(tEmeter &emeter);
-void SendThermistorData();
-
-void EnableOutput(tMPQ4214 &controller);
-void SetVoltage(tMPQ4214 &controller, uint16_t millivolts);
-
-int akash_red_bull_counter = 0;
-
-std::array<bool, 4> enablePins = {false, false, false, false};
-
-int checkShuntVoltage = 0;
+// Value of the alarm pin
+bool alarmPin = false;
+bool temperatureAlarm = false;
+bool canTxError = false;
+uint32_t highestTemperature = 0;  // Highest temperature, used to set alarm pin if above threshold for cTemperatureDebouncing ms
 
 int mymain() {
 	akash_red_bull_counter++;
@@ -63,17 +55,9 @@ int mymain() {
 	HAL_ADC_Start_DMA(&hadc1, reinterpret_cast<uint32_t *>(thermistorValues.data()), thermistorValues.size());
 
 	akash_red_bull_counter++;
-	emeterCanHeader.StdId = cEmeterFeedbackId;
-	emeterCanHeader.RTR = CAN_RTR_DATA;
-	emeterCanHeader.IDE = CAN_ID_STD;
-	emeterCanHeader.DLC = 8;
-	emeterCanHeader.TransmitGlobalTime = DISABLE;
-
-	thermistorCanHeader.StdId = cThermistorFeedbackId;
-	thermistorCanHeader.RTR = CAN_RTR_DATA;
-	thermistorCanHeader.IDE = CAN_ID_STD;
-	thermistorCanHeader.DLC = 8;
-	thermistorCanHeader.TransmitGlobalTime = DISABLE;
+	InitCANTxHeader(&emeterCanHeader, cEmeterFeedbackId);
+	InitCANTxHeader(&thermistorCanHeader, cThermistorFeedbackId);
+	InitCANTxHeader(&relayCanHeader, cRelayFeedbackId);
 
 	// Need to set these high before talking to each BB Controller, but initialise them low
 	HAL_GPIO_WritePin(relay0cmd_GPIO_Port, relay0cmd_Pin, GPIO_PinState::GPIO_PIN_RESET);
@@ -81,11 +65,15 @@ int mymain() {
 	HAL_GPIO_WritePin(relay2cmd_GPIO_Port, relay2cmd_Pin, GPIO_PinState::GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(relay3cmd_GPIO_Port, relay3cmd_Pin, GPIO_PinState::GPIO_PIN_RESET);
 
+	// Also initialise the alarm pin output low
+	HAL_GPIO_WritePin(ALARM_Output_GPIO_Port, ALARM_Output_Pin, GPIO_PinState::GPIO_PIN_RESET);
+
 	while (1) {
 		akash_red_bull_counter++;
 		// First, check if any board have been connected or disconnected
 		if (g_BoardDetectTick == 0) {
 			CheckBoardConnections();
+			SendRelayCmdStatus();
 			g_BoardDetectTick = cBoardDetectPeriod;
 		}
 
@@ -95,16 +83,31 @@ int mymain() {
 
 			SendThermistorData();
 			g_CanTxTick = cEmeterFeedbackPeriod - 5;  // Account for the delays in the functions
+
+			if (highestTemperature < cMaxTemperature)
+				g_TemperatureDebouncingTick = 0;
+
+			else if (g_TemperatureDebouncingTick >= cTemperatureDebouncing)
+				temperatureAlarm = true;
 		}
 
-		// if (checkShuntVoltage == 1) {
-		// 	emeterShuntVoltageReg reg;
-		// 	emeter3.ReadShuntVoltage(&reg);
-		// 	checkShuntVoltage = 0;
-		// }
+		// Error from either temperature or CAN, and alarm pin low
+		if ((temperatureAlarm || canTxError || (g_CanRxTick >= cMaxCANRxPeriod)) && (!alarmPin)) {
+			HAL_GPIO_WritePin(ALARM_Output_GPIO_Port, ALARM_Output_Pin, GPIO_PinState::GPIO_PIN_SET);
+			alarmPin = true;
+			TurnOffAllRelays();
+		}
+
+		else if ((!temperatureAlarm) && (g_CanRxTick < cMaxCANRxPeriod) && (!canTxError) && alarmPin) {
+			HAL_GPIO_WritePin(ALARM_Output_GPIO_Port, ALARM_Output_Pin, GPIO_PinState::GPIO_PIN_RESET);
+			alarmPin = false;
+		}
 	}
 }
 
+/****************************/
+/* Initialisation functions */
+/****************************/
 void CheckBoardConnections() {
 	for (int i = 0; i < cNumMaxPowerBoards; i++) {
 		// If board disconnected
@@ -122,6 +125,14 @@ void CheckBoardConnections() {
 				InitEmeter(*(emeterHandlers[i]));
 		}
 	}
+}
+
+void InitCANTxHeader(CAN_TxHeaderTypeDef *header, uint32_t id) {
+	header->StdId = id;
+	header->RTR = CAN_RTR_DATA;
+	header->IDE = CAN_ID_STD;
+	header->DLC = 8;
+	header->TransmitGlobalTime = DISABLE;
 }
 
 void InitEmeter(tEmeter &emeter) {
@@ -195,6 +206,9 @@ void InitBBController(tMPQ4214 &controller) {
 	controller.SetInitialised(true);
 }
 
+/******************************/
+/* CAN transmission functions */
+/******************************/
 void SendEmeterStatus(tEmeter &emeter) {
 	if (!emeter.GetInitialised())
 		return;
@@ -229,7 +243,10 @@ void SendEmeterStatus(tEmeter &emeter) {
 	txData[6] = reg.sd & 0xFF;
 	txData[7] = reg.sd >> 8;
 
-	HAL_CAN_AddTxMessage(&hcan, &emeterCanHeader, txData, &CanTxMailbox);
+	canTxError = false;
+	if (HAL_CAN_AddTxMessage(&hcan, &emeterCanHeader, txData, &CanTxMailbox) != HAL_OK)
+		canTxError = true;
+
 	HAL_Delay(1);
 }
 
@@ -247,8 +264,43 @@ void SendThermistorData() {
 		}
 	}
 
-	HAL_CAN_AddTxMessage(&hcan, &thermistorCanHeader, txData, &CanTxMailbox);
+	canTxError = false;
+	if (HAL_CAN_AddTxMessage(&hcan, &thermistorCanHeader, txData, &CanTxMailbox) != HAL_OK)
+		canTxError = true;
+
 	HAL_Delay(1);
+}
+
+void SendRelayCmdStatus() {
+	uint8_t txData[8];
+	for (unsigned int i = 0; i < enablePins.size(); i++)
+		txData[i] = enablePins[i];
+
+	canTxError = false;
+	if (HAL_CAN_AddTxMessage(&hcan, &relayCanHeader, txData, &CanTxMailbox) != HAL_OK)
+		canTxError = true;
+}
+
+/**********************************/
+/* BB Controller output functions */
+/**********************************/
+void TurnOffAllRelays() {
+	if (enablePins[0])
+		HAL_GPIO_WritePin(relay0cmd_GPIO_Port, relay0cmd_Pin, GPIO_PinState::GPIO_PIN_RESET);
+
+	if (enablePins[1])
+		HAL_GPIO_WritePin(relay1cmd_GPIO_Port, relay1cmd_Pin, GPIO_PinState::GPIO_PIN_RESET);
+
+	if (enablePins[2])
+		HAL_GPIO_WritePin(relay2cmd_GPIO_Port, relay2cmd_Pin, GPIO_PinState::GPIO_PIN_RESET);
+
+	if (enablePins[3])
+		HAL_GPIO_WritePin(relay3cmd_GPIO_Port, relay3cmd_Pin, GPIO_PinState::GPIO_PIN_RESET);
+
+	for (bool &pin : enablePins)
+		pin = false;
+
+	SendRelayCmdStatus();
 }
 
 void EnableOutput(tMPQ4214 &controller) {
@@ -289,7 +341,10 @@ void SetVoltage(tMPQ4214 &controller, uint16_t millivolts) {
 	// HAL_Delay(3);  // Delay to allow time for the BB Controller to do its thing, maybe remove later?
 }
 
-// CAN Rx interrupt handler
+/****************************/
+/* STM32 interrupt handlers */
+/****************************/
+// CAN Rx handler
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *p_hcan) {
 	CAN_RxHeaderTypeDef rxHeader;
 	uint8_t rxData[8];
@@ -345,7 +400,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *p_hcan) {
 
 			break;
 
-		// Handle messages here
+		case cSignOfLifeId:	 // No data in this message, just used to indicate a presence
 		default:
 			break;
 	}
