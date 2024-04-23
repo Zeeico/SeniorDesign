@@ -57,3 +57,8 @@
 
 * Wrote STM32 code to periodically send the thermistor readings, and indicating the absence of a board through a special value in those thermistor values
 * Wrote code for the GUI to receive and display the received temperatures, except when the value is the invalid flag indicating the absence of a board
+* Wrote GUI code to send CAN messages to enable output control through the GUI instead of manually through a debugger. Messages from the GUI are for output enable, voltage command, and an empty sign of life message
+* Reworked mainboard CAN code to allow for easier control through the GUI
+* Added some I2C debugging code, tweaked some settings to get output from the buck boost controllers working
+* Added code to enable the alarm part of the code, so far only for CAN issue detection (unable to send, or no reception for some time). All the outputs also get disabled whenever the alarm pin gets set high
+* Added code to set the alarm pin when the temperature on any power board gets too high, with some debouncing to avoid erroneous values
