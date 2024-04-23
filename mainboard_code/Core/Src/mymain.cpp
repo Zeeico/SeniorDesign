@@ -357,15 +357,15 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *p_hcan) {
 			uint16_t millivolts = rxData[1] + (rxData[2] << 8);
 
 			if (rxData[0] < bbControllerHandlers.size()) {
-				if (millivolts != 0xFFFF) {
+				if (millivolts == 0xFEFE) {
+					tMPQ4214 *controller = bbControllerHandlers[rxData[0]];
+					InitBBController(*controller);
+				}
+
+				else if (millivolts != 0xFFFF) {
 					tMPQ4214 *controller = bbControllerHandlers[rxData[0]];
 					SetVoltage(*controller, millivolts);
 					EnableOutput(*controller);
-				}
-
-				else if (millivolts == 0xFEFE) {
-					tMPQ4214 *controller = bbControllerHandlers[rxData[0]];
-					InitBBController(*controller);
 				}
 			}
 			break;
