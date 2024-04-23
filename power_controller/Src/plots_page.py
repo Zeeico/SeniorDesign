@@ -29,8 +29,8 @@ class PlotsPage(ft.Stack):
         ]
         self.data_options = [
             ft.dropdown.Option("Voltage"),
-            ft.dropdown.Option("Current"),
-            ft.dropdown.Option("Power"),
+            # ft.dropdown.Option("Current"),
+            # ft.dropdown.Option("Power"),
             ft.dropdown.Option("Temperature"),
         ]
 
