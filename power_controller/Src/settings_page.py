@@ -24,32 +24,38 @@ class SettingsPage(ft.Stack):
         self.appbar = appbar
 
         self.tx_queue = []
+        self.temperature_values = [0, 0, 0, 0]
 
         self.output_col_1 = OutputSettings(1, self)
         self.output_col_2 = OutputSettings(2, self)
         self.output_col_3 = OutputSettings(3, self)
         self.output_col_4 = OutputSettings(4, self)
 
+        self.show_all_outputs = True
+
     def did_mount(self):
+        self.hide_unused_outputs_checkbox = ft.Checkbox(label="Only show connected outputs", value=False, on_change=lambda _: self.toggle_visible_outputs())
+
         self.all_controls = ft.Column(
             [
                 ft.Row(
                     [
-                        ft.Column(
-                            [
-                                ft.Container(height=4),
-                                ft.Text("Main Settings", size=20),
-                            ],
-                            expand=True,
-                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                        ),
                         self.output_col_1,
                         self.output_col_2,
                         self.output_col_3,
                         self.output_col_4,
                     ],
                     vertical_alignment=ft.CrossAxisAlignment.START,
-                )
+                ),
+                ft.Column(
+                    [
+                        ft.Container(height=4),
+                        ft.Text("Main Settings", size=20),
+                        self.hide_unused_outputs_checkbox,
+                    ],
+                    expand=True,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
             ]
         )
 
@@ -105,15 +111,17 @@ class SettingsPage(ft.Stack):
                                             self.page.plots_page.add_data(plot_data, plot_dict["plot_index"])
 
                             elif frame.id == can_ids.thermistorFeedback:
-                                temperature_values = [0, 0, 0, 0]
+                                self.temperature_values = [0, 0, 0, 0]
                                 for i in range(4):
-                                    temperature_values[i] = frame.data[2 * i] + (frame.data[2 * i + 1] << 8)
+                                    self.temperature_values[i] = frame.data[2 * i] + (frame.data[2 * i + 1] << 8)
+
+                                self.show_hide_outputs()
 
                                 for plot_dict in self.page.plots_page.plotted_data:
                                     if plot_dict["data_name"] == "Temperature":
                                         output_id = outputNames.index(plot_dict["output_name"])
-                                        if temperature_values[output_id] != 0xFFFF:
-                                            self.page.plots_page.add_data(temperature_values[output_id] / 100, plot_dict["plot_index"])
+                                        if self.temperature_values[output_id] != 0xFFFF:
+                                            self.page.plots_page.add_data(self.temperature_values[output_id] / 100, plot_dict["plot_index"])
 
             except KeyboardInterrupt:
                 exit()
@@ -124,3 +132,22 @@ class SettingsPage(ft.Stack):
 
     def add_message_can_queue(self, id, data):
         self.tx_queue.append({"id": id, "data": data})
+
+    def toggle_visible_outputs(self):
+        self.show_all_outputs = not self.hide_unused_outputs_checkbox.value
+        self.show_hide_outputs()
+
+    def show_hide_outputs(self):
+        if self.show_all_outputs:
+            self.output_col_1.visible = True
+            self.output_col_2.visible = True
+            self.output_col_3.visible = True
+            self.output_col_4.visible = True
+
+        else:
+            self.output_col_1.visible = True if self.temperature_values[0] != 0xFFFF else False
+            self.output_col_2.visible = True if self.temperature_values[1] != 0xFFFF else False
+            self.output_col_3.visible = True if self.temperature_values[2] != 0xFFFF else False
+            self.output_col_4.visible = True if self.temperature_values[3] != 0xFFFF else False
+
+        self.update()

@@ -24,10 +24,10 @@ class OutputSettings(ft.Column):
         self.relay_checkbox = ft.Checkbox(label="Relay command", value=False, on_change=lambda _: self.relay_cmd())
         self.relay_status = ft.Icon(ft.icons.CLOSE_ROUNDED, color=ft.colors.RED)
 
-        self.v3_3_btn = ft.FilledButton(text="3.3 V", expand=True, col={"md": 16, "lg": 8}, on_click=lambda _: self.vout_set(3.3))
-        self.v5_btn = ft.FilledButton(text="5 V", expand=True, col={"md": 16, "lg": 8}, on_click=lambda _: self.vout_set(5))
-        self.v12_btn = ft.FilledButton(text="12 V", expand=True, col={"md": 16, "lg": 8}, on_click=lambda _: self.vout_set(12))
-        self.v24_btn = ft.FilledButton(text="24 V", expand=True, col={"md": 16, "lg": 8}, on_click=lambda _: self.vout_set(24))
+        self.v3_3_btn = ft.FilledButton(text="3.3 V", expand=True, col={"md": 16, "lg": 8, "xxl": 4}, on_click=lambda _: self.vout_set(3.3))
+        self.v5_btn = ft.FilledButton(text="5 V", expand=True, col={"md": 16, "lg": 8, "xxl": 4}, on_click=lambda _: self.vout_set(5))
+        self.v12_btn = ft.FilledButton(text="12 V", expand=True, col={"md": 16, "lg": 8, "xxl": 4}, on_click=lambda _: self.vout_set(12))
+        self.v24_btn = ft.FilledButton(text="24 V", expand=True, col={"md": 16, "lg": 8, "xxl": 4}, on_click=lambda _: self.vout_set(24))
 
         self.reset_controller_btn = ft.FilledButton(text="Reset Controller", on_click=lambda _: self.reset_controller())
 
