@@ -21,6 +21,7 @@ static constexpr uint32_t cTemperatureDebouncing = 250;	 // ms
 static constexpr uint16_t cMaxTemperature = 60 * 100;  // °C * 100
 
 static constexpr int cInvalidVoltageCmd = 0xFFFF;
+static constexpr int cMaxVoltageCmd = 24 * 1000;  // mV
 
 static constexpr int cNumMaxPowerBoards = 4;
 
@@ -362,7 +363,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *p_hcan) {
 					InitBBController(*controller);
 				}
 
-				else if (millivolts != 0xFFFF) {
+				else if ((millivolts != 0xFFFF) && (millivolts <= cMaxVoltageCmd)) {
 					tMPQ4214 *controller = bbControllerHandlers[rxData[0]];
 					SetVoltage(*controller, millivolts);
 					EnableOutput(*controller);
