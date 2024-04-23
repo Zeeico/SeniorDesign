@@ -19,6 +19,7 @@ static constexpr uint32_t cMaxCANRxPeriod = 500;		 // ms
 static constexpr uint32_t cTemperatureDebouncing = 250;	 // ms
 
 static constexpr uint16_t cMaxTemperature = 60 * 100;  // °C * 100
+// static constexpr uint16_t cMaxTemperature = 25 * 100;  // °C * 100
 
 static constexpr int cInvalidVoltageCmd = 0xFFFF;
 static constexpr int cMaxVoltageCmd = 24 * 1000;  // mV
@@ -48,7 +49,7 @@ std::array<bool, cNumMaxPowerBoards> enablePins = {false, false, false, false};
 bool alarmPin = false;
 bool temperatureAlarm = false;
 bool canTxError = false;
-uint32_t highestTemperature = 0;  // Highest temperature, used to set alarm pin if above threshold for cTemperatureDebouncing ms
+uint16_t highestTemperature = 0;  // Highest temperature, used to set alarm pin if above threshold for cTemperatureDebouncing ms
 
 int mymain() {
 	akash_red_bull_counter++;
@@ -85,8 +86,10 @@ int mymain() {
 			SendThermistorData();
 			g_CanTxTick = cEmeterFeedbackPeriod - 5;  // Account for the delays in the functions
 
-			if (highestTemperature < cMaxTemperature)
+			if (highestTemperature < cMaxTemperature) {
 				g_TemperatureDebouncingTick = 0;
+				temperatureAlarm = false;
+			}
 
 			else if (g_TemperatureDebouncingTick >= cTemperatureDebouncing)
 				temperatureAlarm = true;
@@ -253,6 +256,7 @@ void SendEmeterStatus(tEmeter &emeter) {
 
 void SendThermistorData() {
 	uint8_t txData[8];
+	highestTemperature = 0;
 	for (unsigned int i = 0; i < thermistorValues.size(); i++) {
 		if (thermistorValues[i] < static_cast<uint32_t>(std::max(cPowerBoardADCDetectedThreshold, temperatureLUTOffset))) {
 			// 0xFFFF indicates invalid data
@@ -262,6 +266,8 @@ void SendThermistorData() {
 			uint16_t realTemperature = temperatureLUT[thermistorValues[i] - temperatureLUTOffset];
 			txData[2 * i] = realTemperature & 0xFF;
 			txData[2 * i + 1] = (realTemperature >> 8) & 0xFF;	// Should be 12 bit values, so masking top 4 bits
+			if (realTemperature > highestTemperature)
+				highestTemperature = realTemperature;
 		}
 	}
 
