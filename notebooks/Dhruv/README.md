@@ -66,3 +66,10 @@ After the Op-Amp filtering, the 5V value is scaled using another voltage divider
 
 - Created a python script to help create the LUT for reading thermistor values.
 - Interpolated datasheet values to make the LUT easier to use.
+
+### 4/22/24 ###
+
+- Temperature testing with the DCDCs showed higher than expected temperatures.
+- Given that our dissapation calculations erred on the conservative side, we can guess that we are simply running less efficiently than we theorised. This can be validated by reading the input power into the system, subtracting the power distributed by the LDOs, and comparing this to the output power.
+
+![Temp_Sense](https://github.com/Zeeico/SeniorDesign/assets/100447224/7b18d2a6-9f53-4c4f-8ccf-bc8b32fdc96d)
