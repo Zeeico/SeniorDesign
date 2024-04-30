@@ -1,0 +1,99 @@
+% imports and packages and stuff
+% add or remove these as necessary
+\documentclass[12pt]{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage[shortlabels]{enumitem}
+\usepackage[parfill]{parskip}
+\usepackage[letterpaper, portrait, margin=1in]{geometry}
+
+% bibliography package
+\usepackage{csquotes}
+\usepackage[style=ieee]{biblatex}
+\addbibresource{references.bib}
+
+% appendix package
+\usepackage[title, titletoc]{appendix}
+
+% font
+\usepackage{palatino}
+
+% make urls styled not weirdly
+\urlstyle{same}
+
+% change the spacing of tables to be reasonable
+\renewcommand{\arraystretch}{1.5}
+
+% start of the document
+\begin{document}
+\begin{titlepage}
+    \newcommand{\HRule}{\rule{\linewidth}{0.1mm}}
+    \center % Center everything on the page
+
+    %---------------------------------------------------------------------------------
+    %	HEADING SECTION
+    %---------------------------------------------------------------------------------
+    \textsc{\Large ECE 445}\\[0.5cm] % heading course Number
+    \textsc{\large Senior Design Laboratory}\\[0.5cm] % heading course name
+    \textsc{\Large Final Report }\\[0.5cm] % Minor heading
+    %---------------------------------------------------------------------------------
+    %	TITLE SECTION
+    %---------------------------------------------------------------------------------
+
+    \HRule \\[0.5cm]
+    \huge \textbf{Network Power for Automobiles} % Title
+    \HRule \\[2cm]
+
+    %---------------------------------------------------------------------------------
+    %	AUTHOR SECTION
+    %---------------------------------------------------------------------------------
+    \begin{minipage}{0.5\textwidth}
+        \begin{center} \large
+            \underline{\textbf{Team \#26}} \\ \medskip
+            \textsc{Akash Chandra} (akashc3@illinois.edu) \\
+            \textsc{Dhruv Kulgod} (dkulgod2@illinois.edu) \\
+            \textsc{Constantin Legras} (clegras2@illinois.edu) \\
+        \end{center}
+    \end{minipage} \\[1.5cm]
+
+    \begin{minipage}{0.5\textwidth}
+        \begin{center}
+            \large
+            \underline{TA}: Matthew Qi
+        \end{center}
+    \end{minipage} \\[1cm]
+
+    {\large May 1, 2024} % Date
+
+    \vfill % Fill the rest of the page with white-space
+
+\end{titlepage}
+\pagenumbering{roman}
+\setcounter{page}{2}
+\input{sections/abstract.tex} % include abstract in abstract.tex
+\clearpage
+\tableofcontents
+% \listoffigures % putting these here in case we need them later
+% \listoftables
+\newpage
+
+% Below starts all the sections in their own individual files in the sections folder
+\pagenumbering{arabic}
+
+\clearpage
+\section{Introduction}
+\input{sections/introduction.tex} % Copy the above 3 lines to add another section
+
+\clearpage
+\printbibliography[heading=bibintoc, title={References}]
+
+\begin{appendices}
+    \clearpage
+    \input{sections/appendixa.tex}
+    % copy the above two lines to add more appendices
+\end{appendices}
+\end{document}
