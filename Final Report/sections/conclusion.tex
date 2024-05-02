@@ -1,0 +1,16 @@
+\subsection{Accomplishments}
+While we technically did not accomplish our final goal during this project, we did still manage to complete a lot of the sub goals we set out for ourselves.
+Notably, we were always able to communicate reliably with the STM32 microcontroller over CAN, and the I2C communication with the E-Meters was very stable when the DC/DC were not enabled.
+Furthermore, while the power output wasn't particularly stable, we were still able to command a voltage output over CAN, and have the STM32 relay that command to the DC/DC controller to output the correct voltage, albeit with significant ripple.
+The safety aspects of the project were also functional, which provided greater confidence during testing, as we knew that the board would automatically shut down if anything catastrophic were to happen.
+
+\subsection{Uncertainties}
+The main uncertainties of this project are both noise related: the first is the noise in the I2C clock and signal lines when the DC/DC is enabled, and the other is the noise in the DC/DC's output.
+We believe that, given more time to work on this project, we would be able to solve both of these issues, and would then get a reliable and noise-free system.
+
+\subsection{Future Work}
+The main potential future work of this project would be redesigning the PCBs to reduce noise. 
+A good first step would be switching to a 4 layer PCB, and separating power and signal traces into different planes.
+Another aspect of the project that could be improved is the external packaging, which is something we somewhat neglected in the final push to complete the project.
+
+\cite{ref1}

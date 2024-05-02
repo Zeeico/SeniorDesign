@@ -1,0 +1,124 @@
+There are two PCBs in the project, the control board that houses the microcontroller and the power stages that house the DC/DC controller ICs.
+
+\subsection{Control Board}
+\subsubsection{MCU}
+The microcontroller we chose is the STM32F103, since it was easily available at the ECE supply store and was sufficient for our purposes.
+The members of this team also had prior experience working with this chip, which gave us confidence in creating a successful PCB with it.
+
+\subsubsection{Filter}
+The Filter subsystem is used to help stabilize and filter the thermistor readings. This is accomplished by a double buffer op-amp system with a RC filter.
+Below is the schematic of a single filter. There are 4 of these, one for each powerstage.
+
+\begin{center}
+    \includegraphics[width=0.8\textwidth]{images/op_amp_filter.png}\\
+    \textit{Figure 2.1.2.1: Double Op-Amp filter with an RC filter}\\
+\end{center}
+\vspace{\baselineskip}
+
+Each of the thermistors are pulled up to 5V. To do the automatic powerstage detection, there are pulldown resistors (R14) on each line.
+This also sets the range of the thermistor values, since it forms a voltage divider. D8 and R12 are used to cap the voltage at 5V and to avoid shorting out the 5V supply if the diode does turn on.
+The first op-amp buffers the voltage from the thermistor voltage divider to ensure we don’t run into non-linearities on the RC filter. R11 and C17 form a RC filter with a -3dB cutoff at 10.6 kHz based on the equation 1 \cite{ref7}.
+
+\begin{equation}
+    f_c = \frac{1}{2\pi RC} = \frac{1}{2\pi(10k\Omega)(1.5nF)} = 10.601 kHz
+\end{equation}
+
+The second op-amp allows us to buffer the filtered voltage so we can use a resistor divider to convert the 5V signal into a 3.3V signal for the ADCs on the STM.
+D7 is used to cap the voltage of this op-amp to under 5V so the 3.3V ADC on the STM is kept safe from an overvoltage event.
+We chose to pull the thermistors up to 5V instead of 3.3V since the Emeter chip needs a 5V supply to operate and they are both on the powerstage.
+
+\subsubsection{MCU Power}
+The MCU power system powers all the circuits on the control board and the thermistors on the power stages.
+To keep the design simple, we chose to use linear regulators for this application.
+There is a 12V to 5V regulator and a 12V to 3.3V regulator on the PCB.
+There are diodes to help indicate power on the 5V and 3.3V rails.
+Below are tables that show the large loads on both power rails.
+We can see that we see a total of 301.2 mA is pulled from the 5V LDO and 153.9 mA on the 3.3V LDO.
+
+We chose to use the 5V, 1A LDO from the supply shop for budget concerns and for the extra thermal headroom provided by the bigger package and TO252-3 footprint.
+The use of the 3.3V, 800mA was driven by my previous experience with the LDO.
+
+\begin{center}
+    \begin{tabular}{|l|l|l|l|}
+        \hline
+        \bf Component            & \bf Maximum Power Draw (mA) & \bf Number & \bf Total Draw (mA) \\
+        \hline
+        PSN74LV4T125 \cite{ref1} & 100                         & 1          & 100                 \\
+        \hline
+        TL974IDR \cite{ref2}     & 5.6                         & 2          & 11.2                \\
+        \hline
+        TCAN1044A-Q1 \cite{ref3}         & 130                         & 1          & 130                 \\
+        \hline
+        INA219BIDR \cite{ref4}           & 15                          & 4          & 60                  \\
+        \hline
+    \end{tabular}
+
+    \it Table 2.1.3.1: 5V Power Rail Calculations
+    \vspace{\baselineskip}
+
+    \begin{tabular}{|l|l|l|l|}
+        \hline
+        \bf Component    & \bf Maximum Power Draw (mA) & \bf Number & \bf Total Draw (mA) \\
+        \hline
+        TCAN1044A-Q1 \cite{ref3} & 0.3                         & 1          & 0.3                 \\
+        \hline
+        STM32F103 \cite{ref5}    & 150                         & 1          & 150                 \\
+        \hline
+        CPC1004NTR \cite{ref6}   & 1.8                         & 2          & 3.6                 \\
+        \hline
+    \end{tabular}
+
+    \it Table 2.1.3.2: 3.3V Power Rail Calculations
+    \vspace{\baselineskip}
+
+    \includegraphics[width=0.8\textwidth]{images/5V_ldo_schematic.png}\\
+    \it Figure 2.1.3.3: 5V LDO schematic\\
+    \vspace{\baselineskip}
+
+    \includegraphics[width=0.8\textwidth]{images/3V3_ldo_schematic.png}\\
+    \it Figure 2.1.3.4: 3.3V LDO schematic\\
+\end{center}
+
+\subsection{Power Stage}
+\subsubsection{4 Switch Buck Boost \& Relay}
+We used a MPQ4214GU 4 switch buck-boost controller for the DCDC controller. It would communicate over I2C with the STM.
+We used the I2C interface to set the output voltage level.
+The original design was made using a TI DC/DC controller, but we couldn't use the IC due to supply chain issues.
+The switches chosen were 40 V, 40 A NMOS. We chose a 15 uH inductor based on the design provided by TI for their DC/DC controller.
+The schematic for the DCDC is provided in appendix C, figure C.1.
+
+\subsubsection{E-Meter IC}
+We used a TI power monitor chip to report the power usage of each supply over I2C.
+We chose the shunt resistor side to fit within the range of the DC/DC controller and the power meter.
+Appendix C, figure C.2 shows the schematic for the power meter IC.
+
+\subsection{Software}
+\subsubsection{Embedded Code}
+The embedded code in this project was responsible for a few key tasks.
+Firstly, it had to communicate over a CAN bus to receive output commands and transmit information about the current status of each output (voltage, power, temperature, possible errors), as well as automatically turn off each output when a CAN communication error was detected.
+Secondly, it was responsible for communicating over I2C to each of the e-meter and buck boost controller chips, to write configuration parameters to them, as well as read information, and act on any interrupts generated, using the EXTI (EXTernal Interrupt) pins.
+Thirdly, we used the ADCs on the STM32 to read the temperatures of the powerstage PCBs, and utilized DMA (Direct Memory Access) to enable frequent and fast reading of the temperatures without taking up precious clock cycles.
+Finally, the ALARM\_Output pin was used as a digital output to indicate when an error has occurred.
+This can be used to notify of errors even if the CAN communication has failed, and is therefore an important safety feature.
+Whenever this pin is set high, all the powerstage outputs are also disabled.
+
+\begin{center}
+    \includegraphics[width=0.8\textwidth]{images/stm32_ioc_pinout.png}\\
+    \it Figure 2.3.1.1: STM32 Microcontroller pinout configuration\\
+\end{center}
+
+\subsubsection{Testing GUI}
+To facilitate testing, we decided to write a custom power controller GUI in Python, using the Flet library.
+This library uses the Flutter UI framework, and allows us to use well known Python libraries with a good looking UI framework.
+This GUI emulated the CAN signals that would normally come from a Vehicle Control Unit (VCU).
+It lets the user view which powerstage boards are connected, control individual output parameters for each board, as well as plot the information transmitted by the STM32.
+The appbar is used to select the CAN communication parameters used to connect to the Control board, and currently supports USB to CAN adapters by PEAK-System and Kvaser, using their respective Python CAN libraries.
+
+\begin{center}
+    \includegraphics[width=0.8\textwidth]{images/gui_settings_page.png}\\
+    \it Figure 2.3.2.1: Settings page of the custom Power Controller GUI\\
+    \vspace{\baselineskip}
+
+    \includegraphics[width=0.8\textwidth]{images/gui_charts_page.png}\\
+    \it Figure 2.3.2.2: Charts page of the custom Power Controller GUI\\
+\end{center}

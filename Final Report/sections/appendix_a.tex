@@ -1,0 +1,218 @@
+\section{Requirement and Verification Tables} \label{appendix:a}
+The following section will cover the results of our R\&V tables created during the design phase. Items are marked either as “achieved” or are given reasoning for failure.
+
+\begin{center}
+    \begin{xltabular}{\textwidth} {|X|X|>{\hsize=.5\hsize}X|}
+        \caption{MCU System Requirements} \label{tab:long} \\
+
+        \hline \multicolumn{1}{|c|}{\textbf{Requirements}} & \multicolumn{1}{c|}{\textbf{Verification}} & \multicolumn{1}{c|}{\textbf{Result}} \\ \hline
+        \endfirsthead
+
+        \multicolumn{3}{c}%
+        {\tablename\ \thetable{} -- continued from previous page} \\
+        \hline \multicolumn{1}{|c|}{\textbf{Requirements}} & \multicolumn{1}{c|}{\textbf{Verification}} & \multicolumn{1}{c|}{\textbf{Result}} \\ \hline
+        \endhead
+
+        \hline \multicolumn{3}{|r|}{{Continued on next page}} \\ \hline
+        \endfoot
+        \hline
+        \endlastfoot
+
+        \hline
+        Use I2C to communicate with the E-meters and DC/DC Controller ICs on each Powerstage board                                                                     &
+        \begin{itemize}
+            \item Demonstrate voltage control over DC/DC output by sending I2C data in STM's software debug mode
+            \item Receive data from E-meter over I2C by viewing received data in STM's software debug mode
+        \end{itemize}                                                           &
+        Achieved                                                                                                                                                                                       \\
+
+        \hline
+        Send and receive CAN messages                                                                                                                                  &
+        \begin{itemize}
+            \item Create a test CAN bus, sending and receiving signals using a laptop and custom viewing and controlling software with an off the shelf CAN to USB adapter
+            \item Configure a custom CAN message with a specific message ID and decode format for data received from the E-meter module
+        \end{itemize} &
+        Achieved                                                                                                                                                                                       \\
+
+        \hline
+        Read analog temperatures                                                                                                                                       &
+        \begin{itemize}
+            \item Receive analog voltage from thermistors, viewing received voltage on laptop in remote debug mode, or on custom viewing software
+            \item Convert STM's ADC reading into a temperature value in Celsius
+            \item Measure error between system's reading and an external temperature reading (thermal camera) less than 10\%
+        \end{itemize}                          &
+        Achieved                                                                                                                                                                                       \\
+
+        \hline
+        Open/close the relays using the digital GPIO pins on the MCU                                                                                                   &
+        Measure continuity of the circuit using probe points and a portable voltmeter while actuating the relay                                                        &
+        \begin{flushleft}
+            N.A. Relay functionality was replaced via an "enable" pin on the DC/DC converters
+        \end{flushleft}\\
+
+        \hline
+        Send digital signals out of the device (alarm signal) &
+        \begin{itemize}
+            \item View the alarm signal on an oscilloscope as it is set high/low by the STM
+            \item Verify the alarm signal is automatically set by the STM when reading temperature greater than 60°C. Temperature reading can be spoofed using a potentiometer instead of the thermistor
+        \end{itemize}                          &
+        Achieved\\
+    \end{xltabular}
+\end{center}
+
+
+\begin{center}
+    \begin{xltabular}{\textwidth} {|X|X|>{\hsize=.5\hsize}X|}
+        \caption{MCU Power System Requirements} \label{tab:long1} \\
+
+        \hline \multicolumn{1}{|c|}{\textbf{Requirements}} & \multicolumn{1}{c|}{\textbf{Verification}} & \multicolumn{1}{c|}{\textbf{Result}} \\ \hline
+        \endfirsthead
+
+        \multicolumn{3}{c}%
+        {\tablename\ \thetable{} -- continued from previous page} \\
+        \hline \multicolumn{1}{|c|}{\textbf{Requirements}} & \multicolumn{1}{c|}{\textbf{Verification}} & \multicolumn{1}{c|}{\textbf{Result}} \\ \hline
+        \endhead
+
+        \hline \multicolumn{3}{|r|}{{Continued on next page}} \\ \hline
+        \endfoot
+        \hline
+        \endlastfoot
+
+        \hline
+        Provide 5V  $\pm$10\%  at a 500 mA load while keeping the LDO under 60°C                                                                   &
+        \begin{itemize}
+            \item Connect the net to an electronic load and then produce a 500mA current draw. Let the load run for an hour and measure temperature with an IR camera
+            \item Use an oscilloscope to verify voltage output is within tolerance
+        \end{itemize}                                                           &
+        Achieved                                                                                                                                                                                       \\
+
+        \hline
+        Provide 3.3V  $\pm$10\%  at a 300 mA load while keeping the LDO under 60°C &
+        \begin{itemize}
+            \item Connect the net to an electronic load and then produce a 300mA current draw. Let the load run for an hour and measure temperature with an IR camera
+            \item Use an oscilloscope to verify voltage output is within tolerance
+        \end{itemize} &
+        Achieved \\
+        \hline
+    \end{xltabular}
+\end{center}
+
+\begin{center}
+    \begin{xltabular}{\textwidth} {|X|X|>{\hsize=.5\hsize}X|}
+        \caption{Filter System Requirements} \label{tab:long2} \\
+
+        \hline \multicolumn{1}{|c|}{\textbf{Requirements}} & \multicolumn{1}{c|}{\textbf{Verification}} & \multicolumn{1}{c|}{\textbf{Result}} \\ \hline
+        \endfirsthead
+
+        \multicolumn{3}{c}%
+        {\tablename\ \thetable{} -- continued from previous page} \\
+        \hline \multicolumn{1}{|c|}{\textbf{Requirements}} & \multicolumn{1}{c|}{\textbf{Verification}} & \multicolumn{1}{c|}{\textbf{Result}} \\ \hline
+        \endhead
+
+        \hline \multicolumn{3}{|r|}{{Continued on next page}} \\ \hline
+        \endfoot
+        \hline
+        \endlastfoot
+
+        \hline
+        Detects when the Powerstage is not plugged in with a pull up resistor on the input                                                                     &
+        Unplug the Powerstage and view that the alarm signal is raised on an oscilloscope                                                         &
+        Achieved                                                                                                                                                                                       \\
+
+        \hline
+        Scale down the 5V signal to a 3.3V signal &
+        \begin{itemize}
+            \item Measure the voltage out of the 'Buffering Op-Amp' and the 'Amplifying Op-Amp' on an oscilloscope
+            \item Verify that the measured voltage is scaled correctly based on the measurement
+        \end{itemize} &
+        Achieved \\
+
+        \hline
+        Read in analog temperatures &
+        See MCU Subsystem &
+        Achieved \\
+        \hline
+    \end{xltabular}
+\end{center}
+
+
+\begin{center}
+    \begin{xltabular}{\textwidth} {|X|X|>{\hsize=.5\hsize}X|}
+        \caption{Powerstage Subsystem Requirements} \label{tab:long3} \\
+
+        \hline \multicolumn{1}{|c|}{\textbf{Requirements}} & \multicolumn{1}{c|}{\textbf{Verification}} & \multicolumn{1}{c|}{\textbf{Result}} \\ \hline
+        \endfirsthead
+
+        \multicolumn{3}{c}%
+        {\tablename\ \thetable{} -- continued from previous page} \\
+        \hline \multicolumn{1}{|c|}{\textbf{Requirements}} & \multicolumn{1}{c|}{\textbf{Verification}} & \multicolumn{1}{c|}{\textbf{Result}} \\ \hline
+        \endhead
+
+        \hline \multicolumn{3}{|r|}{{Continued on next page}} \\ \hline
+        \endfoot
+        \hline
+        \endlastfoot
+
+        \hline
+        Use I2C to communicate with the E-meters and DC/DC Controller ICs on the powerstage                                                                     &
+        See MCU subsystem                                                        &
+        Achieved                                                                                                                                                                                       \\
+
+        \hline
+        Outputs should have less than $\pm$5\% voltage ripple compared to software setpoint &
+        \begin{itemize}
+            \item Send a CAN message to MCU to command one output to turn on at voltage X, where X can be 3.3V, 5V, 12V or 24V
+            \item Measure open circuit voltage using an oscilloscope
+            \item Connect output to a resistive load and measure voltage using an oscilloscope
+        \end{itemize} &
+        \begin{flushleft}
+            Failed. DC/DC control gains were not configured for our application. Missing buffering capacitors on the input and outputs led to instability and high ripple
+        \end{flushleft}\\
+
+        \hline
+        Supply up to 2A of current on all active rails simultaneously. $\pm$5\% current ripple on the load &
+        Send a CAN message to MCU to supply 4 resistive loads with 2A &
+        \begin{flushleft}
+            Failed. Same as above
+        \end{flushleft}\\
+
+        \hline
+        Temperature of all components must stay below 60° Celsius while providing 2A on all active rails for 60 minutes &
+        Set up 4 resistive loads, and supply each with 2A for 60 minutes. Measure temperature of the board with an IR camera &
+        \begin{flushleft}
+            Failed. Due to the high amount of output ripple, our converters were not operating at the efficiencies predicted during our simulations, thus our cooling solution was insufficient
+        \end{flushleft}\\
+        \hline
+    \end{xltabular}
+\end{center}
+
+
+\begin{center}
+    \begin{xltabular}{\textwidth} {|X|X|>{\hsize=.5\hsize}X|}
+        \caption{Relay System Requirements} \label{tab:long4} \\
+
+        \hline \multicolumn{1}{|c|}{\textbf{Requirements}} & \multicolumn{1}{c|}{\textbf{Verification}} & \multicolumn{1}{c|}{\textbf{Result}} \\ \hline
+        \endfirsthead
+
+        \multicolumn{3}{c}%
+        {\tablename\ \thetable{} -- continued from previous page} \\
+        \hline \multicolumn{1}{|c|}{\textbf{Requirements}} & \multicolumn{1}{c|}{\textbf{Verification}} & \multicolumn{1}{c|}{\textbf{Result}} \\ \hline
+        \endhead
+
+        \hline \multicolumn{3}{|r|}{{Continued on next page}} \\ \hline
+        \endfoot
+        \hline
+        \endlastfoot
+
+        \hline
+        Relays can be actuated via CAN commands                                                                   &
+        Individual outputs can be toggled from the CAN based viewing and controlling tool                                                           &
+        N.A.                                                                                                                                                                                       \\
+
+        \hline
+        Relays are automatically opened in the event of a failure / alarm condition &
+        Measure the voltage output from the device when temperature rises above 60°C. Temperature reading can be spoofed using a potentiometer instead of the thermistor &
+        Achieved using enable pin \\
+        \hline
+    \end{xltabular}
+\end{center}

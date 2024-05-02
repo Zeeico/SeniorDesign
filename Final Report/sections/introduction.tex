@@ -1,9 +1,41 @@
-A general section looks like this. There is usually a blurb introducing the top-level section here.
+Modern EVs contain a host of sensors, actuators, temperature control devices etc. that all require specific input voltages.
+Typical vehicles will have a single low-voltage battery that goes through two stages of conversion: once to distribute through the vehicle, and again to step down to the actual device requirement.
+Our project aims to simplify this system by moving all control and conversion local to the components that use them.
+The theory behind this is the desire of automotive companies to move to a “one power one communication” arrangement.
 
-\subsection{Subsection 1}
+\begin{center}
+    \includegraphics[width=0.8\textwidth]{./images/new_status_diagram.png}\\
+    \textit{Figure 1.1: Status quo for power distribution/wire harness on moderns EVs}\\
+\end{center}
+\vspace{\baselineskip}
 
-Then you go into a subsection. In your text you can cite things like this \cite{ieee-ethics}, and reference other section such as appendices like Appendix \ref{appendix:a}.
+Applying our project onto such a vehicle produces three main improvements:
+\begin{enumerate}
+    \item Simplified harnessing leads to easier manufacturing and fewer transmission losses
+    \item Switched converters for voltage step-downs lead to efficiency gains over linear regulators
+    \item Improved data feedback allows better duty cycle analysis and system optimization
+\end{enumerate}
 
-\subsubsection{Sub-subsection 1}
+\begin{center}
+    \includegraphics[width=0.8\textwidth]{./images/new_status_diagram.png}\\
+    \textit{Figure 1.2: Theoretical application of our project into the same vehicle as the previous image}\\
+\end{center}
+\vspace{\baselineskip}
 
-Sometimes you will make use of subsubsections. Note: when you include figures and tables, I suggest using the [htb!] modifier.
+Our long-term hope was to create a software-configurable device that could be applied in a broad area for many automotive families. 
+In doing so, we would be able to create a cost effective solution by taking advantage of the inherent economies of scale already prevalent in the industry.
+
+We made no changes to the high level structure of the project through the semester.
+
+\subsection{High Level Requirements}
+The success of this project is measured against the following criteria:
+\begin{enumerate}
+    \item Communication with the solution over Controller Area Network (CAN)
+    \begin{enumerate}
+        \item Independent control over each voltage output
+        \item Voltage/current usage data received at 20Hz
+        \item Visualization of voltage/current usage data by the user within the accuracy provided by the E-meter chip
+    \end{enumerate}
+    \item Supply up to 2A of current on all active rails simultaneously. Outputs should have less than $\pm$5\% voltage ripple and $\pm$5\% current ripple on the load compared to software setpoint
+    \item Stay below 60° Celsius while providing 2A on all active rails for 60 minutes
+\end{enumerate}

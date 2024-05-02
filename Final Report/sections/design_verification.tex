@@ -1,0 +1,26 @@
+Design verification was primarily conducted using the requirements and validation tables generated during the design phase.
+In this section, we will cover the verification steps taken to validate our boards through manufacturing and testing.
+An in-depth check list of all requirements is included in Appendix A.
+
+\subsection{Control Board}
+Once our PCB and components were received, we sped into manufacturing the Control board.
+We did not have a stencil for our PCB, so we hand-soldered all our components.
+Validation of our soldering included measuring isolation between the various voltage nets on the PCB and GND.
+Once satisfied, we supplied 12V to the board using a lab power supply, and inspected it with an IR camera to find hotpots (indicative of short circuits).
+
+\begin{center}
+    \includegraphics[width=0.65\textwidth]{images/thermal_camera_testing.jpg}\\
+    \it Image 3.1.1: Thermal camera image captured during testing\\
+\end{center}
+
+\subsection{Power Stage Board}
+To test the power stage, we used the working control board to communicate with the DC/DC controller IC and E-meter IC.
+We had noise issues on the I2C line when the DC/DCs were enabled.
+To solve this issue, we swapped the 1 kOhm pull ups to 100 Ohm pull ups.
+Our DC output was a sinusoidal waveform.
+This was likely caused by our controller gain being set too low due to a misinterpretation in the application note for the DC/DC controller.
+
+\begin{center}
+    \includegraphics[width=0.8\textwidth]{images/testing_oscilloscope_output.png}\\
+    \it Figure 3.2.1: DC output of the DC/DC controller\\
+\end{center}

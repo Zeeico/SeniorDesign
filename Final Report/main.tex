@@ -10,10 +10,12 @@
 \usepackage[shortlabels]{enumitem}
 \usepackage[parfill]{parskip}
 \usepackage[letterpaper, portrait, margin=1in]{geometry}
+\usepackage{xltabular}
 
 % bibliography package
 \usepackage{csquotes}
 \usepackage[style=ieee]{biblatex}
+\setlength\bibitemsep{\baselineskip}
 \addbibresource{references.bib}
 
 % appendix package
@@ -24,6 +26,8 @@
 
 % make urls styled not weirdly
 \urlstyle{same}
+
+\hyphenpenalty 10000
 
 % change the spacing of tables to be reasonable
 \renewcommand{\arraystretch}{1.5}
@@ -89,11 +93,37 @@
 \input{sections/introduction.tex} % Copy the above 3 lines to add another section
 
 \clearpage
+\section{Design}
+\input{sections/design.tex} % Copy the above 3 lines to add another section
+
+\clearpage
+\section{Design Verification}
+\input{sections/design_verification.tex} % Copy the above 3 lines to add another section
+
+\clearpage
+\section{Costs}
+\input{sections/costs.tex} % Copy the above 3 lines to add another section
+
+\clearpage
+\section{Conclusion}
+\input{sections/conclusion.tex} % Copy the above 3 lines to add another section
+
+\clearpage
 \printbibliography[heading=bibintoc, title={References}]
 
 \begin{appendices}
     \clearpage
-    \input{sections/appendixa.tex}
+    \input{sections/appendix_a.tex}
     % copy the above two lines to add more appendices
+
+    \clearpage
+    \input{sections/appendix_b.tex}
+
+    \clearpage
+    \input{sections/appendix_c.tex}
+
+    \clearpage
+    \input{sections/appendix_d.tex}
+
 \end{appendices}
 \end{document}
