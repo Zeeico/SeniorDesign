@@ -54,6 +54,71 @@ I have gotten the simulation tools from MPS to do the spice simulations. I have 
 
 ### 4/1/2024
 
-The simulations aren't working due to errors in my model. It is complaining of too many items in the model. We also got the PCBs this week so we are starting to manufacture the project.
+The simulations aren't working due to errors in my model. It is complaining of too many items in the model. I spent some time trying to fix it but I didn't get anywhere. I also recalibrated the Vref to output voltage gain for the DC/DC. 
 
-### 4/
+### 4/10/2024
+
+We got the PCBs this week so we are starting to manufacture the project.
+
+### 4/13/2024
+
+The controller PCB was ready to be tested but the DC/DC module wasn't, so we made sure that CAN and the ADCs both work. 
+
+Before software testing it, I plugged it into the debugger to make sure we can talk to chip.
+
+Using the debugger, we saw that everything worked except for one ADC. Upon looking at the PCB layout, we saw that I had shifted routed the ADC to the pin next to the one setup in software. 
+
+<img src="./assets/2466C6CD-5027-43E2-88F8-5F6CAA627F28.jpg" alt="2466C6CD-5027-43E2-88F8-5F6CAA627F28" style="zoom:25%;" />
+
+### 4/14/2024
+
+The first powerstage pcb is done. It was a pain to solder due to how small the PCB. The inductor was the worst due to it's huge thermal mass.  
+
+### 4/15/2024
+
+I finished the 2nd powerstage pcb.
+
+We are starting to test everything now.
+
+<img src="./assets/rn_image_picker_lib_temp_33e14eb6-388b-4095-bd45-96c8f6d4301b.jpg" alt="rn_image_picker_lib_temp_33e14eb6-388b-4095-bd45-96c8f6d4301b" style="zoom:25%;" />
+
+### 4/16/2024
+
+When we turned on the first power output, it blew up the 3.3v ldo and the stm.
+
+We don't know what caused this, but after replacing the ldo and stm the board seems to be fine.
+
+Something buzzes when we turn on the DC/DC.
+
+### 4/17/2024 - 4/30/2024
+
+On the first powerstage PCB I made, I found that one of the gates of the switches is at 400 ohms with respect to ground. The rest of the switches are at 400 kOhm. The result of this is that switch with the grounded gate heats up quickly. Even after reflowing it with hot air it still didn't work. When I probe the broken switch and it's complementary switch, I get these turn on/ off patterns
+
+![](./assets/scope_0.png)
+
+![scope_1](./assets/scope_1.png)
+
+Here we can see that the when the switch turns off, it will "spike" on a little towards the end for some reason.
+
+Using the second power stage PCB, we got a voltage output but the power supply was buzzing. When I probed the 12V DC input, I got the sinusoidal waveform as shown below
+
+![](./assets/scope_3.png)
+
+The 5V LDO also had some issues
+
+![](./assets/scope_2.png)
+
+This means that out thermistor readings were quite noisy since the entire supply was undergoing this massive swing.
+
+The output was also quite distorted.
+
+![](./assets/scope_4.png)
+
+I realized I should add some capacitance to the PCB, but when I solder on the SMD caps I found the PCB shorts itself. This is very odd behaviour to me so I chose to use a huge electrolytic capacitor to hopefully resolve some of these issues. After adding the capacitor we see this on the 5V LDO output.
+
+​				  ![](./assets/scope_5.png)
+
+
+
+<img src="./assets/rn_image_picker_lib_temp_6301f3c4-7c6f-48f7-8f94-4a081ff4531b.jpg" alt="rn_image_picker_lib_temp_6301f3c4-7c6f-48f7-8f94-4a081ff4531b" style="zoom:25%;" />
+
