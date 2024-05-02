@@ -51,3 +51,9 @@ The BOM has been made for both boards and all the 0603 parts have been put toget
 ### 3/23/2024
 
 I have gotten the simulation tools from MPS to do the spice simulations. I have imported our design into the tool but are issues in simulating the board.![image-20240328094514845](./assets/image-20240328094514845.png)
+
+### 4/1/2024
+
+The simulations aren't working due to errors in my model. It is complaining of too many items in the model. We also got the PCBs this week so we are starting to manufacture the project.
+
+### 4/
